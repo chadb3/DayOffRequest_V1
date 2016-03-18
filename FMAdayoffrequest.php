@@ -10,7 +10,7 @@
 			background-color:purple;
 			color:white;
 			text-align:center;
-			padding:5.5px;			
+			 padding:5.5px;			
 		}
 		 #side 	{
 					line-height:30px;
