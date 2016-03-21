@@ -10,10 +10,9 @@ $a_var="asd";
    }
    $db = new MyDB();
    if(!$db){
-      echo $db->lastErrorMsg();
+      $a_var= $db->lastErrorMsg();
    } else {
-      echo "Opened database successfully\n";
-      
+      $a_var= "Database Connecton status!";
    }
 
 
@@ -40,6 +39,7 @@ $a_var="asd";
 					width:159px;
 					float:left;
 					padding:1px;
+					padding-bottom:50px;
 					
 				}
 				#bottom_div{
@@ -47,7 +47,9 @@ $a_var="asd";
 					color:white;
 					clear:both;
 					text-align:center;
-					padding:5px;
+					height:50px;
+
+					
 					
 				}
 				#req
@@ -70,17 +72,29 @@ $a_var="asd";
 				{
 					float: left;
 					padding-left:5px;
+					
+				}
+				#special
+				{
+					padding-top: 500px;
+					color:green;
+					font-size:10px;
+					position:fixed;
+					
+					
+					
 				}
 			
-		
+		S
 		
 	</style>
 	
 	<h1 id="head">Day off request form!</h1>
 	<div id="side"> 
 		<ul>
-			<li>Home</li>
+			<a href="FMAdayoffrequest.php"><li>Home</li></a>
 			<li>View Days Off</li>
+			<li id='special' ><?php echo $a_var  ?></li>
 		</ul>
 		
 	</div>
@@ -89,23 +103,50 @@ $a_var="asd";
 	
 <!--Body of the html has all the form actions and button!-->
 <div id="body">
-	<form action="<?php $_PHP_var ?>" method ="GET">
-		   Name:<input type="text" name="name" required> <br>
-		   Phone:<input type="text" name="phone" required><br>
-		   <!--Reason:<input type="dropdown" name="asdf">-->		
-	
-	Reason: <select name="reason">
-		<option value="medical">Medical</option>
-		<option value="dential">Dential</option>
-		<option value="family_emergency">Family Emergency</option>
-		<option value="personal">Personal</option>
-		<option value="other">Other</option>
-	</select>
-	<br>
-	<!--<form>Elaborate Reason:<input type="text" name="elab_reason"></form>-->
-	<button type="button">Submit</button>
+
+	<form method='POST'>
+		Name:<input type="text" name="name"><br>
+		Phone:<input type="text" name="phone"><br>
+		Shifts:<input type="text" name=shifts"><br>
+		Sub:<input type="text" name ="sub"><br>
+		Reason:<select name="reason">
+				  <option value="Medical">Medical</option>
+			      <option value="Dential">Dential</option>
+			      <option value="Family Emergency">Family Emergency</option>
+			      <option value="Personal">Personal</option>
+			      <option value="Other">Other</option>
+			  </select><br>
+	<input type="submit" name = "submit" value="Send">
 	</form>
-	<?php echo $a_var; ?>
+	
+	
+	
+	
+	
+	
+	
+	<?php
+		if(isset($_POST['submit']))
+		{
+			$name=$_POST["name"];
+			$phone=$_POST["phone"];
+			$reason=$_POST["reason"];
+			$insert_statment= "INSERT INTO EMPDAYOFFREQ 
+			VALUES (null,'$name','$phone','$reason');";
+			$db = new MyDB();
+			
+			
+			
+			
+			
+			$db->exec($insert_statment);
+			echo "It worked!";
+			$db->close();
+		}
+	
+	
+	 ?>
+	
 	
 	
 	
