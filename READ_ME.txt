@@ -7,4 +7,5 @@ These are the features version one.(implimented or soon to be)
 	-employee has to pick a basic reason 
 	-Employer page to see and manage requests(Not Yet Implimented)
 	-Employer can move the request to a separate database as a record( NYI)
+	-you may need to deal with permissions to get it to write to the DB
 	

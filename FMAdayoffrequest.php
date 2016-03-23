@@ -34,7 +34,7 @@ $a_var="asd";
 		}
 		 #side 	{
 					line-height:30px;
-					background-color:#eeeeee;
+					background-color:#e6e6e6;
 					height:600px;
 					width:159px;
 					float:left;
@@ -76,7 +76,7 @@ $a_var="asd";
 				}
 				#special
 				{
-					padding-top: 500px;
+					padding-top: 550px;
 					color:green;
 					font-size:10px;
 					position:fixed;
@@ -84,8 +84,9 @@ $a_var="asd";
 					
 					
 				}
+				
 			
-		S
+		
 		
 	</style>
 	
@@ -93,7 +94,7 @@ $a_var="asd";
 	<div id="side"> 
 		<ul>
 			<a href="FMAdayoffrequest.php"><li>Home</li></a>
-			<li>View Days Off</li>
+			<a href="ManageDays.php"><li>View Days Off</li></a>
 			<li id='special' ><?php echo $a_var  ?></li>
 		</ul>
 		
@@ -122,7 +123,7 @@ $a_var="asd";
 	
 	
 	
-	
+
 	
 	
 	<?php
@@ -131,6 +132,12 @@ $a_var="asd";
 			$name=$_POST["name"];
 			$phone=$_POST["phone"];
 			$reason=$_POST["reason"];
+			
+
+			
+			
+			
+			
 			$insert_statment= "INSERT INTO EMPDAYOFFREQ 
 			VALUES (null,'$name','$phone','$reason');";
 			$db = new MyDB();
@@ -148,6 +155,8 @@ $a_var="asd";
 	 ?>
 	
 	
+	
+
 	
 	
 	
