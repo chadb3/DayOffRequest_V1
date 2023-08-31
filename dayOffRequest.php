@@ -22,10 +22,10 @@ $a_var="asd";
 <html>
 <head>
 <title>Day off request!</title>
-
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-	<style>
+<!--	<style>
 		#head{ 
 			background-color:purple;
 			color:white;
@@ -88,7 +88,7 @@ $a_var="asd";
 			
 		
 		
-	</style>
+	</style>-->
 	
 	<h1 id="head">Day off request form!</h1>
 	<div id="side"> 

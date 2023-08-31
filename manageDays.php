@@ -22,9 +22,10 @@ $a_var="asd";
 <html>
 <head>
 	<title>Manage Days Off!</title>
+    <link rel="stylesheet" href="styles.css">
 </head>	
 <body>
- <style>
+<!-- <style>
  #head{ 
 			background-color:purple;
 			color:white;
@@ -75,7 +76,7 @@ $a_var="asd";
 				
 				
 				
- </style>
+ </style> -->
  <h1 id="head">Manage Days!</h1>
  	<div id="side"> 
 		<ul>
