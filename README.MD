@@ -5,6 +5,7 @@ More of a prototype of a more advanced one to come down the line/ proof of conce
 Ment for a business that still uses paper day off requests.
 Ment to be ran on a local network.
 These are the features version one.(implimented or soon to be)
+	
 	-Uses the honor system (no log on for this version!)
 	-employee has to put shifts in plane txt along with each replacement
 	-employee has to pick a basic reason 
