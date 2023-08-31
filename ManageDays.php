@@ -79,7 +79,7 @@ $a_var="asd";
  <h1 id="head">Manage Days!</h1>
  	<div id="side"> 
 		<ul>
-			<a href="FMAdayoffrequest.php"><li>Home</li></a>
+			<a href="Dayoffrequest.php"><li>Home</li></a>
 			<a href="ManageDays.php"><li>View Days Off</li></a>
 			<li id='special' ><?php echo $a_var  ?></li>
 		</ul>
@@ -115,7 +115,7 @@ $a_var="asd";
 	
 	
 	<div id="bottom_div">
-<p>FMA day off requester web-software</p>
+<p>Day off requester web-software</p>
 </div>
  
 
