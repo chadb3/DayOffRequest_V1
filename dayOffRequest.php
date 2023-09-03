@@ -1,7 +1,21 @@
-<?php 
-$a_var="asd";
+<?php
+//phpinfo(); 
+$a_var="Hello World!";
+//function sqlite_open($location,$mode)
 
-   class MyDB extends SQLite3
+//{
+            $location="Db3.db";
+	    $db = new SQLite3($location);
+	    $result=$db->querySingle("select NAME from EMPDAYOFFREQ WHERE NUM=1");
+	    //$result=array(1,2,3);
+	    
+	    //$result="Cheese";
+		//echo $result;
+	    // $row=$result->fetchArray();
+	       // return $handle;
+
+//}
+/*   class MyDB extends SQLite
    {
       function __construct()
       {
@@ -13,7 +27,7 @@ $a_var="asd";
       $a_var= $db->lastErrorMsg();
    } else {
       $a_var= "Database Connecton status!";
-   }
+   }*/
 
 
 ?>
@@ -95,7 +109,7 @@ $a_var="asd";
 		<ul>
 			<a href="dayOffRequest.php"><li>Home</li></a>
 			<a href="manageDays.php"><li>View Days Off</li></a>
-			<li id='special' ><?php echo $a_var  ?></li>
+			<li id='special' ><?php /*echo*/var_dump($result)/*$a_var*/  ?></li>
 		</ul>
 		
 	</div>
@@ -163,7 +177,7 @@ $a_var="asd";
 </div>
 <!--Bottom div with information -->
 <div id="bottom_div">
-<p>FMA day off requester web-software</p>
+<p>Day off requester web-software</p>
 </div>
 
 
