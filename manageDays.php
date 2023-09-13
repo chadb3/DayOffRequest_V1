@@ -80,7 +80,8 @@ $a_var="asd";
  <h1 id="head">Manage Days!</h1>
  	<div id="side"> 
 		<ul>
-			<a href="dayOffRequest.php"><li>Home</li></a>
+			<a href="index.php"><li>Home</li></a>
+			<a href="dayOffRequest.php"><li>Request Day Off</li></a>
 			<a href="manageDays.php"><li>View Days Off</li></a>
 			<li id='special' ><?php echo $a_var  ?></li>
 		</ul>
