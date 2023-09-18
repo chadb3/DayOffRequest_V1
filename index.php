@@ -14,7 +14,7 @@ $a_var="Hello World!";
 <title>Day off request!</title>
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+
 	<h1 id="head">Day off request form!</h1>
 	<div id="side"> 
 		<ul>
@@ -41,10 +41,11 @@ Integer facilisis lorem vitae turpis congue, a finibus sem imperdiet. Phasellus 
 
 Quisque sollicitudin mauris a eros sollicitudin volutpat. Vivamus cursus aliquet tristique. Suspendisse malesuada, nisi et porttitor lobortis, nunc nisl tempus augue, in semper mi urna ac orci. Donec nec neque tempor, facilisis orci quis, sodales mauris. Sed lobortis a ligula nec pulvinar. Nunc suscipit justo porttitor justo volutpat tincidunt. Aliquam ultrices porttitor diam vitae vehicula. Mauris viverra aliquet lorem, quis venenatis mi.
 
-Donec nec venenatis elit. Nulla consequat, eros ac mattis finibus, tortor dolor aliquam mi, id pellentesque diam nibh sed justo. Morbi fermentum enim odio, eu interdum risus auctor non. Maecenas congue porta mollis. Nam ut posuere ligula. Aenean rhoncus orci a lacinia euismod. Cras eu augue dictum, dapibus neque id, iaculis velit. Nam convallis odio et arcu gravida, vel mattis augue malesuada. Donec id augue sed felis rutrum fringilla nec quis libero. Vivamus sit amet pellentesque nisl. </p>
+Donec nec venenatis elit. Nulla consequat, eros ac mattis finibus, tortor dolor aliquam mi, id pellentesque diam nibh sed justo. Morbi fermentum enim odio, eu interdum risus auctor non. Maecenas congue porta mollis. Nam ut posuere ligula. Aenean rhoncus orci a lacinia euismod. Cras eu augue dictum, dapibus neque id, iaculis velit. Nam convallis odio et arcu gravida, vel mattis augue malesuada. Donec id augue sed felis rutrum fringilla nec quis libero. Vivamus sit amet pellentesque nisl. 
+</p>
 	
 </div>
-</body>
+
 <!--Bottom div with information -->
 <div id="bottom_div">
 <p>Day off requester web-software</p>
