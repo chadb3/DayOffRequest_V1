@@ -33,13 +33,13 @@
 					text-align:left;
 					padding-left:0px;
 				}
-				div#body
+				#body
 				{
 					float: left;
 					padding-left:50px;
 					background-color:green;
 				}
-				p
+				#p
 				{
 					background-color:red;
 				}
