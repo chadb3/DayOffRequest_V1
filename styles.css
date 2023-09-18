@@ -33,7 +33,7 @@
 					text-align:left;
 					padding-left:0px;
 				}
-				#body
+				#body,#h1
 				{
 					float: left;
 					padding-left:50px;
