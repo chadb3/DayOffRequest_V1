@@ -1,4 +1,5 @@
 <?php
+clearstatcache();
 //phpinfo(); 
 $a_var="Hello World!";
 
