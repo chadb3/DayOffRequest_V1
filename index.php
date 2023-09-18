@@ -30,8 +30,8 @@ $a_var="Hello World!";
 	
 <!--Body of the html has all the form actions and button!-->
 <div id="body">
-	<h1>Hello World</h1>
-	<p>
+	<h1 id="index_hello">Hello World</h1>
+	<p id="intro">
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque imperdiet, massa ac sodales posuere, orci mauris rhoncus nunc, id consequat purus neque sit amet augue. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras tortor ipsum, molestie eget aliquet ut, varius sed dui. Morbi eleifend ornare sapien. Nulla rutrum, odio non gravida scelerisque, nisi sem lacinia augue, at imperdiet sem augue ut massa. Proin leo sapien, venenatis gravida turpis ut, fermentum finibus nibh. Sed a nisl at sem blandit vestibulum. Aenean lorem mi, rutrum sit amet mollis eget, tristique nec nunc. Mauris ac nisi enim. Aenean gravida nibh pellentesque hendrerit elementum. Mauris nec est non diam fermentum egestas in eu sem. Proin lorem velit, imperdiet vitae condimentum quis, sagittis vehicula enim. Phasellus iaculis ex eget mattis euismod.
 
@@ -44,12 +44,13 @@ Quisque sollicitudin mauris a eros sollicitudin volutpat. Vivamus cursus aliquet
 Donec nec venenatis elit. Nulla consequat, eros ac mattis finibus, tortor dolor aliquam mi, id pellentesque diam nibh sed justo. Morbi fermentum enim odio, eu interdum risus auctor non. Maecenas congue porta mollis. Nam ut posuere ligula. Aenean rhoncus orci a lacinia euismod. Cras eu augue dictum, dapibus neque id, iaculis velit. Nam convallis odio et arcu gravida, vel mattis augue malesuada. Donec id augue sed felis rutrum fringilla nec quis libero. Vivamus sit amet pellentesque nisl. </p>
 	
 </div>
+</body>
 <!--Bottom div with information -->
 <div id="bottom_div">
 <p>Day off requester web-software</p>
 </div>
 
-</body>
+
 
 </html>
 
