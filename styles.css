@@ -4,7 +4,7 @@
 			text-align:center;
 			padding:5.5px;			
 		}
-		 #side 	{
+		 #side{
 					line-height:30px;
 					background-color:#e6e6e6;
 					height:600px;
@@ -12,7 +12,6 @@
 					float:left;
 					padding:1px;
 					padding-bottom:50px;
-					
 				}
 				#bottom_div{
 					background-color:purple;
@@ -20,9 +19,6 @@
 					clear:both;
 					text-align:center;
 					height:50px;
-
-					
-					
 				}
 				#req
 				{
@@ -30,20 +26,16 @@
 				}
 				ul
 				{
-				
 					color:blue;
 					list-style-type:none;
 					float:left;
 					text-align:left;
 					padding-left:0px;
 				}
-				
-				
-				
 				#body
 				{
 					float: left;
-					padding-left:5px;
+					padding-left:50px;
 					
 				}
 				#special
@@ -52,8 +44,5 @@
 					color:green;
 					font-size:10px;
 					position:fixed;
-					
-					
-					
 				}
 
