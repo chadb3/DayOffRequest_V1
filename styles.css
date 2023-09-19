@@ -36,9 +36,9 @@
 				#body
 				{
 					float: left;
-					padding-left:50px;
+					/*padding-left:50px;*/
 					background-color:green;
-					margin-left:159px;
+					margin-left:160px;
 				}
 				#index_hello{background-color:red;}
 				#p
