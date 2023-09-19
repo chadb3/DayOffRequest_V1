@@ -6,13 +6,15 @@
 				padding:5.5px;			
 			}
 		 #side{
-					line-height:30px;
-					background-color:#e6e6e6;
-					height:600px;
-					width:159px;
-					float:left;
-					padding:1px;
-					padding-bottom:50px;
+  height: 100%;
+  width: 200px;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: #111;
+  overflow-x: hidden;
+  padding-top: 20px;
 				}
 				#bottom_div{
 					background-color:purple;
