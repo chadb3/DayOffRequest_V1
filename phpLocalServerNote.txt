@@ -4,4 +4,4 @@ use the above to start a local instance
 
 in an Internet Browser, navigate to "localhost:8000"
 
-This should make it easier to develop, as it was getting tedious pushing new builds to my ubuntu instance that is running Apache. 
+This should make it easier to develop, as it was getting tedious pushing new builds to my ubuntu instance that is running Apache just to test some css changes. 
