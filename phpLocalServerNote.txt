@@ -1,7 +1,9 @@
- php -S localhost:8000
+php -S localhost:8000
 
 use the above to start a local instance
 
 in an Internet Browser, navigate to "localhost:8000"
 
-This should make it easier to develop, as it was getting tedious pushing new builds to my ubuntu instance that is running Apache just to test some css changes. 
+Note: using the above, there will be less commits, even to dev. The reason for many of the commits was troubleshooting CSS and php code. I would need to push a new build and pull it onto my Ubuntu Server with Apache just to test.
+
+Now that I know about this command that won't be necessary.
