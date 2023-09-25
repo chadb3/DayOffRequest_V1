@@ -28,3 +28,13 @@ nav a.active {
   background-color: #04AA6D;
   color: white;
 }
+
+nav #right a{
+  float:right;
+}
+footer
+{
+color: pink;
+background-color:#333;
+text-align: center;
+}

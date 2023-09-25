@@ -9,4 +9,13 @@
 <header>
 Welcome: Company Day off requester.
 </header>
-<nav><ul><li><a href="index.php">Home</a></li><li><a href="requestDayOff.php">Request Days Off</a></li><li><a href="manageDaysOff.php">Manage Days off</a></li></ul></nav>
+<nav>
+	<ul id="left">
+		<li><a href="index.php">Home</a></li>
+		<li><a href="requestDayOff.php">Request Days Off</a></li>
+		<li><a href="manageDaysOff.php">Manage Days off</a></li>
+	</ul>
+	<ul id="right">
+		<li><a href="login.php">Login</a></li>
+	</ul>
+</nav>
