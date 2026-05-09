@@ -1,0 +1,28 @@
+# Kiro AI specs and configuration
+.kiro/
+
+# SQLite database files
+*.db
+
+# Composer dependencies
+/vendor/
+composer.lock
+
+# PHP
+*.log
+*.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env

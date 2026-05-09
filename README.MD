@@ -12,4 +12,8 @@ These are the features version one.(implimented or soon to be)
 	-Employer page to see and manage requests(Not Yet Implimented)
 	-Employer can move the request to a separate database as a record( NYI)
 	-you may need to deal with permissions to get it to write to the DB
-	
+
+## AI Assisted Development
+
+This project is developed with assistance from Kiro, an AI-powered development environment. AI was used for code generation, architecture design, and documentation. All AI-generated code has been reviewed and approved by a human developer.
+
