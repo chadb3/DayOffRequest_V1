@@ -64,3 +64,6 @@ These are the manual steps you need to do on your Linux VM to get things running
 - The `Db3.db` file needs to be writable by the PHP process
 - If you get permission errors: `chmod 664 Db3.db && chmod 775 .`
 - For production use, consider running behind Apache or Nginx instead of the built-in server
+
+
+TASKS in this list are complete. didn't do the compose steps for now. Steps relating to viewing the requests is put off for now as it isn't implemented yet.

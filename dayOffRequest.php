@@ -2,9 +2,10 @@
 
 $a_var="Hello World!";
 
-            $location="Db3.db";
-	    $db = new SQLite3($location);
-	    $result=$db->querySingle("select NAME from EMPDAYOFFREQ WHERE NUM=1");
+            #$location="Db3.db";
+	    #$db = new SQLite3($location);
+	    #$result=$db->querySingle("select NAME from EMPDAYOFFREQ WHERE NUM=1");
+	    require_once 'db.php';
 
 ?>
 
@@ -57,11 +58,20 @@ $a_var="Hello World!";
 			
 			$insert_statment= "INSERT INTO EMPDAYOFFREQ 
 			VALUES (null,'$name','$phone','$reason');";
-			$db = new MyDB();
+			#$db = new MyDB();
 			
-			$db->exec($insert_statment);
+			#$db->exec($insert_statment);
+			#echo "It worked!";
+			#$db->close();
+			$db = getDb();
+			$stmt = $db->prepare("INSERT INTO EMPDAYOFFREQ (NAME, PHONE, REASON) VALUES (:name, :phone, :reason)");
+			$stmt->bindValue(':name', $name, SQLITE3_TEXT);
+			$stmt->bindValue(':phone', $phone, SQLITE3_TEXT);
+			$stmt->bindValue(':reason', $reason, SQLITE3_TEXT);
+			$stmt->execute();
 			echo "It worked!";
 			$db->close();
+
 		}
 	 ?>
 	
