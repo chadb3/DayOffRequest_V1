@@ -49,7 +49,10 @@ if (!columnExists($db, 'EMPDAYOFFREQ', 'STATUS')) {
 
 // Add SUBMITTED_DATE column if it doesn't exist
 if (!columnExists($db, 'EMPDAYOFFREQ', 'SUBMITTED_DATE')) {
-    $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN SUBMITTED_DATE TEXT NOT NULL DEFAULT (datetime('now','localtime'))");
+    // SQLite ALTER TABLE doesn't allow non-constant defaults like datetime().
+    // Use empty string as default, then backfill with current timestamp.
+    $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN SUBMITTED_DATE TEXT NOT NULL DEFAULT ''");
+    $db->exec("UPDATE EMPDAYOFFREQ SET SUBMITTED_DATE = datetime('now','localtime') WHERE SUBMITTED_DATE = ''");
     echo "Added SUBMITTED_DATE column to EMPDAYOFFREQ table.\n";
 } else {
     echo "SUBMITTED_DATE column already exists in EMPDAYOFFREQ table. Skipping.\n";

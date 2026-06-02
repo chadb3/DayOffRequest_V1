@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // If no errors, insert into database
     if (empty($errors)) {
         $db = getDb();
-        $stmt = $db->prepare("INSERT INTO EMPDAYOFFREQ (NAME, PHONE, SHIFTS, SUB, REASON) VALUES (:name, :phone, :shifts, :sub, :reason)");
+        $stmt = $db->prepare("INSERT INTO EMPDAYOFFREQ (NAME, PHONE, SHIFTS, SUB, REASON, SUBMITTED_DATE) VALUES (:name, :phone, :shifts, :sub, :reason, datetime('now','localtime'))");
         $stmt->bindValue(':name', $formData['name'], SQLITE3_TEXT);
         $stmt->bindValue(':phone', $formData['phone'], SQLITE3_TEXT);
         $stmt->bindValue(':shifts', $formData['shifts'], SQLITE3_TEXT);
