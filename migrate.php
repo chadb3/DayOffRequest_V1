@@ -23,6 +23,22 @@ function columnExists(SQLite3 $db, string $table, string $column): bool {
     return false;
 }
 
+// Add SHIFTS column if it doesn't exist
+if (!columnExists($db, 'EMPDAYOFFREQ', 'SHIFTS')) {
+    $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN SHIFTS TEXT NOT NULL DEFAULT ''");
+    echo "Added SHIFTS column to EMPDAYOFFREQ table.\n";
+} else {
+    echo "SHIFTS column already exists in EMPDAYOFFREQ table. Skipping.\n";
+}
+
+// Add SUB column if it doesn't exist
+if (!columnExists($db, 'EMPDAYOFFREQ', 'SUB')) {
+    $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN SUB TEXT NOT NULL DEFAULT ''");
+    echo "Added SUB column to EMPDAYOFFREQ table.\n";
+} else {
+    echo "SUB column already exists in EMPDAYOFFREQ table. Skipping.\n";
+}
+
 // Add STATUS column if it doesn't exist
 if (!columnExists($db, 'EMPDAYOFFREQ', 'STATUS')) {
     $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN STATUS TEXT NOT NULL DEFAULT 'Pending'");
