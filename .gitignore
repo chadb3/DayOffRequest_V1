@@ -8,6 +8,9 @@
 /vendor/
 composer.lock
 
+# PHPUnit cache
+.phpunit.cache/
+
 # PHP
 *.log
 *.cache
