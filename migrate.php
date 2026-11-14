@@ -1,75 +1,17 @@
 <?php
 /**
  * Database migration script for the Day-Off Request System.
- * 
- * Adds STATUS and SUBMITTED_DATE columns to EMPDAYOFFREQ table,
- * and creates the EMPDAYOFFREQ_ARCHIVE table.
- * 
- * Safe to run multiple times (idempotent).
+ *
+ * Adds missing columns to EMPDAYOFFREQ and creates the EMPDAYOFFREQ_ARCHIVE
+ * table. Safe to run multiple times (idempotent). All SQL lives in db.php.
  */
 
 require_once 'db.php';
 
 $db = getDb();
-
-// Helper: Check if a column exists in a table
-function columnExists(SQLite3 $db, string $table, string $column): bool {
-    $result = $db->query("PRAGMA table_info($table)");
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-        if ($row['name'] === $column) {
-            return true;
-        }
-    }
-    return false;
+foreach (migrateSchema($db) as $message) {
+    echo $message . "\n";
 }
-
-// Add SHIFTS column if it doesn't exist
-if (!columnExists($db, 'EMPDAYOFFREQ', 'SHIFTS')) {
-    $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN SHIFTS TEXT NOT NULL DEFAULT ''");
-    echo "Added SHIFTS column to EMPDAYOFFREQ table.\n";
-} else {
-    echo "SHIFTS column already exists in EMPDAYOFFREQ table. Skipping.\n";
-}
-
-// Add SUB column if it doesn't exist
-if (!columnExists($db, 'EMPDAYOFFREQ', 'SUB')) {
-    $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN SUB TEXT NOT NULL DEFAULT ''");
-    echo "Added SUB column to EMPDAYOFFREQ table.\n";
-} else {
-    echo "SUB column already exists in EMPDAYOFFREQ table. Skipping.\n";
-}
-
-// Add STATUS column if it doesn't exist
-if (!columnExists($db, 'EMPDAYOFFREQ', 'STATUS')) {
-    $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN STATUS TEXT NOT NULL DEFAULT 'Pending'");
-    echo "Added STATUS column to EMPDAYOFFREQ table.\n";
-} else {
-    echo "STATUS column already exists in EMPDAYOFFREQ table. Skipping.\n";
-}
-
-// Add SUBMITTED_DATE column if it doesn't exist
-if (!columnExists($db, 'EMPDAYOFFREQ', 'SUBMITTED_DATE')) {
-    // SQLite ALTER TABLE doesn't allow non-constant defaults like datetime().
-    // Use empty string as default, then backfill with current timestamp.
-    $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN SUBMITTED_DATE TEXT NOT NULL DEFAULT ''");
-    $db->exec("UPDATE EMPDAYOFFREQ SET SUBMITTED_DATE = datetime('now','localtime') WHERE SUBMITTED_DATE = ''");
-    echo "Added SUBMITTED_DATE column to EMPDAYOFFREQ table.\n";
-} else {
-    echo "SUBMITTED_DATE column already exists in EMPDAYOFFREQ table. Skipping.\n";
-}
-
-// Create EMPDAYOFFREQ_ARCHIVE table if it doesn't exist
-$db->exec("CREATE TABLE IF NOT EXISTS EMPDAYOFFREQ_ARCHIVE (
-    NUM INTEGER PRIMARY KEY,
-    NAME TEXT NOT NULL,
-    PHONE TEXT NOT NULL,
-    SHIFTS TEXT NOT NULL,
-    SUB TEXT NOT NULL,
-    REASON TEXT NOT NULL,
-    STATUS TEXT NOT NULL,
-    SUBMITTED_DATE TEXT NOT NULL,
-    ARCHIVED_DATE TEXT NOT NULL DEFAULT (datetime('now','localtime'))
-)");
-echo "EMPDAYOFFREQ_ARCHIVE table is ready.\n";
+$db->close();
 
 echo "\nMigration complete.\n";

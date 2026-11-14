@@ -1,5 +1,6 @@
 <?php
-require_once 'db.php';
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/validation.php';
 
 $errors = [];
 $success = false;
@@ -13,9 +14,7 @@ $formData = [
     'reason' => ''
 ];
 
-$allowedReasons = ['Medical', 'Dental', 'Family Emergency', 'Personal', 'Other'];
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     // Collect form data
     $formData['name'] = isset($_POST['name']) ? $_POST['name'] : '';
     $formData['phone'] = isset($_POST['phone']) ? $_POST['phone'] : '';
@@ -23,38 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formData['sub'] = isset($_POST['sub']) ? $_POST['sub'] : '';
     $formData['reason'] = isset($_POST['reason']) ? $_POST['reason'] : '';
 
-    // Validate required fields are non-empty and not whitespace-only
-    if (trim($formData['name']) === '') {
-        $errors[] = 'Name is required.';
-    }
-    if (trim($formData['phone']) === '') {
-        $errors[] = 'Phone is required.';
-    }
-    if (trim($formData['shifts']) === '') {
-        $errors[] = 'Shifts is required.';
-    }
-    if (trim($formData['sub']) === '') {
-        $errors[] = 'Substitute is required.';
-    }
-    if (trim($formData['reason']) === '') {
-        $errors[] = 'Reason is required.';
-    }
-
-    // Validate reason is from the allowed set
-    if (!in_array($formData['reason'], $allowedReasons, true)) {
-        $errors[] = 'Invalid reason selected.';
-    }
+    // Validate via shared validation (field => message)
+    $errors = validateRequest($formData);
 
     // If no errors, insert into database
     if (empty($errors)) {
         $db = getDb();
-        $stmt = $db->prepare("INSERT INTO EMPDAYOFFREQ (NAME, PHONE, SHIFTS, SUB, REASON, SUBMITTED_DATE) VALUES (:name, :phone, :shifts, :sub, :reason, datetime('now','localtime'))");
-        $stmt->bindValue(':name', $formData['name'], SQLITE3_TEXT);
-        $stmt->bindValue(':phone', $formData['phone'], SQLITE3_TEXT);
-        $stmt->bindValue(':shifts', $formData['shifts'], SQLITE3_TEXT);
-        $stmt->bindValue(':sub', $formData['sub'], SQLITE3_TEXT);
-        $stmt->bindValue(':reason', $formData['reason'], SQLITE3_TEXT);
-        $stmt->execute();
+        insertRequest($db, $formData);
         $db->close();
         $success = true;
 
@@ -105,11 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		Shifts:<input type="text" name="shifts" value="<?php echo htmlspecialchars($formData['shifts']); ?>"><br>
 		Sub:<input type="text" name="sub" value="<?php echo htmlspecialchars($formData['sub']); ?>"><br>
 		Reason:<select name="reason">
-				  <option value="Medical"<?php if ($formData['reason'] === 'Medical') echo ' selected'; ?>>Medical</option>
-				  <option value="Dental"<?php if ($formData['reason'] === 'Dental') echo ' selected'; ?>>Dental</option>
-				  <option value="Family Emergency"<?php if ($formData['reason'] === 'Family Emergency') echo ' selected'; ?>>Family Emergency</option>
-				  <option value="Personal"<?php if ($formData['reason'] === 'Personal') echo ' selected'; ?>>Personal</option>
-				  <option value="Other"<?php if ($formData['reason'] === 'Other') echo ' selected'; ?>>Other</option>
+				  <?php foreach (ALLOWED_REASONS as $reasonOption): ?>
+				  <option value="<?php echo htmlspecialchars($reasonOption); ?>"<?php if ($formData['reason'] === $reasonOption) echo ' selected'; ?>><?php echo htmlspecialchars($reasonOption); ?></option>
+				  <?php endforeach; ?>
 			  </select><br>
 		<input type="submit" name="submit" value="Send">
 	</form>

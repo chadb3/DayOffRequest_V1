@@ -2,17 +2,14 @@
 require_once 'db.php';
 
 // Handle approve/deny/archive POST actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['action'])) {
-    $action = $_POST['action'];
-    $id = $_POST['id'];
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['id'], $_POST['action'])) {
+    $action = (string) $_POST['action'];
+    $id = (int) $_POST['id'];
 
     if ($action === 'approve' || $action === 'deny') {
         $newStatus = ($action === 'approve') ? 'Approved' : 'Denied';
         $db = getDb();
-        $stmt = $db->prepare("UPDATE EMPDAYOFFREQ SET STATUS = :status WHERE NUM = :id");
-        $stmt->bindValue(':status', $newStatus, SQLITE3_TEXT);
-        $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
-        $stmt->execute();
+        updateRequestStatus($db, $id, $newStatus);
         $db->close();
         header('Location: manageDays.php');
         exit;
@@ -20,29 +17,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['action'
 
     if ($action === 'archive') {
         $db = getDb();
-        $db->exec('BEGIN TRANSACTION');
-        try {
-            // Insert into archive
-            $stmt = $db->prepare("INSERT INTO EMPDAYOFFREQ_ARCHIVE (NUM, NAME, PHONE, SHIFTS, SUB, REASON, STATUS, SUBMITTED_DATE) SELECT NUM, NAME, PHONE, SHIFTS, SUB, REASON, STATUS, SUBMITTED_DATE FROM EMPDAYOFFREQ WHERE NUM = :id");
-            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
-            $stmt->execute();
-
-            // Delete from active table
-            $stmt = $db->prepare("DELETE FROM EMPDAYOFFREQ WHERE NUM = :id");
-            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
-            $stmt->execute();
-
-            $db->exec('COMMIT');
-        } catch (Exception $e) {
-            $db->exec('ROLLBACK');
-            $archiveError = "Failed to archive request. The record has been retained.";
-        }
+        $archived = archiveRequest($db, $id);
         $db->close();
 
-        if (!isset($archiveError)) {
+        if ($archived) {
             header('Location: manageDays.php?view=history');
             exit;
         }
+        $archiveError = "Failed to archive request. The record has been retained.";
     }
 }
 
@@ -55,23 +37,7 @@ if ($view !== 'history') {
 
 $db = getDb();
 
-if ($view === 'history') {
-    // Query approved/denied requests for history view
-    $stmt = $db->prepare("SELECT NUM, NAME, PHONE, SHIFTS, SUB, REASON, STATUS, SUBMITTED_DATE FROM EMPDAYOFFREQ WHERE STATUS IN (:status1, :status2)");
-    $stmt->bindValue(':status1', 'Approved', SQLITE3_TEXT);
-    $stmt->bindValue(':status2', 'Denied', SQLITE3_TEXT);
-} else {
-    // Query pending requests
-    $stmt = $db->prepare("SELECT NUM, NAME, PHONE, SHIFTS, SUB, REASON, SUBMITTED_DATE FROM EMPDAYOFFREQ WHERE STATUS = :status");
-    $stmt->bindValue(':status', 'Pending', SQLITE3_TEXT);
-}
-
-$result = $stmt->execute();
-
-$requests = [];
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-    $requests[] = $row;
-}
+$requests = ($view === 'history') ? getHistoryRequests($db) : getPendingRequests($db);
 $db->close();
 ?>
 

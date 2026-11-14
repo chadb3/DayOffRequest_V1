@@ -177,3 +177,55 @@ function getArchivedRequestById(SQLite3 $db, int $num): ?array {
     $row = $result->fetchArray(SQLITE3_ASSOC);
     return $row === false ? null : $row;
 }
+
+/**
+ * Bring an existing database up to the current schema. Idempotent.
+ * @return string[] progress messages, one per line
+ */
+function migrateSchema(SQLite3 $db): array {
+    $messages = [];
+
+    $columnExists = function (string $table, string $column) use ($db): bool {
+        $result = $db->query("PRAGMA table_info($table)");
+        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            if ($row['name'] === $column) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    $columns = [
+        'SHIFTS' => "TEXT NOT NULL DEFAULT ''",
+        'SUB' => "TEXT NOT NULL DEFAULT ''",
+        'STATUS' => "TEXT NOT NULL DEFAULT 'Pending'",
+        // ALTER TABLE cannot add a non-constant default, so backfill below.
+        'SUBMITTED_DATE' => "TEXT NOT NULL DEFAULT ''",
+    ];
+    foreach ($columns as $column => $definition) {
+        if ($columnExists('EMPDAYOFFREQ', $column)) {
+            $messages[] = "$column column already exists in EMPDAYOFFREQ table. Skipping.";
+            continue;
+        }
+        $db->exec("ALTER TABLE EMPDAYOFFREQ ADD COLUMN $column $definition");
+        if ($column === 'SUBMITTED_DATE') {
+            $db->exec("UPDATE EMPDAYOFFREQ SET SUBMITTED_DATE = datetime('now','localtime') WHERE SUBMITTED_DATE = ''");
+        }
+        $messages[] = "Added $column column to EMPDAYOFFREQ table.";
+    }
+
+    $db->exec("CREATE TABLE IF NOT EXISTS EMPDAYOFFREQ_ARCHIVE (
+        NUM INTEGER PRIMARY KEY,
+        NAME TEXT NOT NULL,
+        PHONE TEXT NOT NULL,
+        SHIFTS TEXT NOT NULL,
+        SUB TEXT NOT NULL,
+        REASON TEXT NOT NULL,
+        STATUS TEXT NOT NULL,
+        SUBMITTED_DATE TEXT NOT NULL,
+        ARCHIVED_DATE TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    )");
+    $messages[] = 'EMPDAYOFFREQ_ARCHIVE table is ready.';
+
+    return $messages;
+}
