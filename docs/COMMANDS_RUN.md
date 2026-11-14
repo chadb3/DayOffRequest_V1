@@ -59,3 +59,40 @@ Sub-agents also edited and created files with their file tools. Those are file e
 | Return to the dev branch | `git switch kiro-dev` |
 | Restore stashed `db.php` and `.gitignore` changes | `git stash pop` |
 | Commit and push the work | `git add <files by name>; git commit -m "..."; git push` |
+
+## 4. Raising the minimum PHP version to 8.5
+
+These commands were run after the file was first created. They cover the pre-push check and the change of the minimum PHP version from 8.3 to 8.5 (spec task 13).
+
+### Run directly by the orchestrator
+
+| # | Purpose | Command |
+|---|---|---|
+| 16 | Check status and run the full suite before the push | `git branch --show-current; git status --short; git log --oneline -3; $env:Path += ";C:\php\php-8.5.12-1-nts-Win32-vs17-x64"; php vendor/bin/phpunit 2>&1 \| Select-Object -Last 3` |
+| 17 | Check status after the developer's CI change | `git status --short; git log --oneline -3` |
+| 18 | Review the `composer.json` and `README.MD` changes | `git status --short; git diff -- composer.json README.MD` |
+| 19 | Append this section | `Add-Content docs/COMMANDS_RUN.md ...` |
+
+The orchestrator also fetched https://www.php.net/supported-versions.php and the php.net 8.5 release data to confirm that 8.5 is the newest supported branch and 8.5.12 the latest security release. These were web fetches, not shell commands.
+
+### Reported by the task 13.1 sub-agent
+
+`$p` stands for `C:\php\php-8.5.12-1-nts-Win32-vs17-x64`. This list is exact, because the sub-agent was asked to report every command it ran.
+
+| Purpose | Command |
+|---|---|
+| Check the working tree | `git status --short; git diff --stat` |
+| Refresh the `composer.lock` content hash without upgrading packages (result: "Nothing to modify in lock file") | `$p\php.exe -d extension=zip $p\composer.phar update --lock` |
+| Validate `composer.json` and the lock file | `$p\php.exe -d extension=zip $p\composer.phar validate` |
+| Try to diff the lock file (empty, because `composer.lock` is in `.gitignore` and not tracked) | `git diff composer.lock` |
+| Confirm the lock file is ignored and inspect its hash | `git ls-files composer.lock; git check-ignore -v composer.lock; Select-String -Path composer.lock -Pattern 'content-hash\|"php"\|platform'; git status --short` |
+| Run the full suite (36 tests passed) | `$p\php.exe vendor/bin/phpunit` |
+
+The task 13.2 sub-agent edited `README.MD` only and ran no commands.
+
+### Run by the developer
+
+| Purpose | Command |
+|---|---|
+| Change the CI matrix to PHP 8.5 only, then commit and push (commit `9e296af`) | edited `.github/workflows/tests.yml`; `git add`, `git commit`, `git push` |
+| Commit and push the PHP 8.5 minimum | `git add composer.json README.MD docs/COMMANDS_RUN.md; git commit -m "..."; git push` |

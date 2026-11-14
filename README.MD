@@ -15,7 +15,7 @@ These are the features version one.(implimented or soon to be)
 
 ## Prerequisites
 
-- **PHP 8.3 or newer** (the development machine uses PHP 8.5.12, NTS, x64).
+- **PHP 8.5 or newer** (the development machine uses PHP 8.5.12, NTS, x64). The minimum was raised from 8.3 to 8.5 for security reasons; 8.5 is the newest supported PHP branch.
 - PHP extensions: `sqlite3` and `mbstring`. Enable them in `php.ini` (`extension=sqlite3`, `extension=mbstring`) if they are not already on.
 - **SQLite is bundled with PHP** (through the `sqlite3` extension), so no separate SQL engine needs to be installed.
 - [Composer](https://getcomposer.org/) for installing dev dependencies such as PHPUnit.
