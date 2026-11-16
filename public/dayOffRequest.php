@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/validation.php';
+require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/validation.php';
 
 $errors = [];
 $success = false;
@@ -54,7 +54,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
 	<h1 id="head">Day off request form!</h1>
 
-	<?php include 'nav.php'; ?>
+	<?php include __DIR__ . '/../src/nav.php'; ?>
 
 <!--Body of the html has all the form actions and button!-->
 <div id="body">

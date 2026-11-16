@@ -14,10 +14,14 @@ final class DataAccessIsolationTest extends TestCase
     public function testOnlyDbPhpContainsEngineSpecificCode(): void
     {
         $root = dirname(__DIR__, 2);
-        $files = glob($root . DIRECTORY_SEPARATOR . '*.php') ?: [];
+        $files = [];
+        foreach (['public', 'src', 'bin'] as $dir) {
+            $files = array_merge($files, glob($root . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR . '*.php') ?: []);
+        }
+        $dbPhp = realpath($root . '/src/db.php');
         $files = array_values(array_filter(
             $files,
-            static fn (string $f): bool => strtolower(basename($f)) !== 'db.php'
+            static fn (string $f): bool => realpath($f) !== $dbPhp
         ));
 
         $this->assertNotEmpty($files, 'No application .php files were scanned.');

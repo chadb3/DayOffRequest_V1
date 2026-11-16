@@ -40,6 +40,20 @@ Composer may need the `zip` extension to unpack packages. If it is not enabled i
 php -d extension=zip composer.phar install
 ```
 
+## Project Layout
+
+```
+public/    index.php, dayOffRequest.php, manageDays.php, styles.css
+src/       db.php, validation.php, nav.php
+bin/       migrate.php
+data/      Db3.db
+tests/     PHPUnit tests
+docs/      documentation
+composer.json, phpunit.xml
+```
+
+Only `public/` is reachable by URL, so the database, migration script, and config files can't be downloaded or run from a browser.
+
 ## Running the App
 
 If `php` is not recognized, either use the full path to `php.exe` (for example `C:\php\php-8.5.12-1-nts-Win32-vs17-x64\php.exe`) in place of `php` in the commands below, or add PHP to PATH for the current PowerShell session only:
@@ -48,19 +62,21 @@ If `php` is not recognized, either use the full path to `php.exe` (for example `
 $env:Path += ";C:\php\php-8.5.12-1-nts-Win32-vs17-x64"
 ```
 
-If you already have a `Db3.db` from an earlier version, run the migration once to update its schema:
+If you already have a `data/Db3.db` from an earlier version, run the migration once to update its schema. It is CLI only and refuses to run from a browser:
 
 ```
-php migrate.php
+php bin/migrate.php
 ```
 
-Start the PHP built-in server from the repository root:
+Start the PHP built-in server from the repository root, with `public/` as the document root:
 
 ```
-php -S localhost:8000
+php -S localhost:8000 -t public
 ```
 
 Then open <http://localhost:8000/> in a browser.
+
+For production, configure your web server (Apache or nginx) to use `public/` as its document root.
 
 ## Running the Tests
 

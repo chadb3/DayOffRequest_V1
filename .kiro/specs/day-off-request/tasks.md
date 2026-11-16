@@ -235,14 +235,50 @@ This plan implements a complete employee day-off request system with vanilla PHP
     - Note that the minimum was raised for security
     - _Requirements: 8.5_
 
-- [ ] 14. Final checkpoint - Verify compliance
+- [x] 14. Restructure into a public web root
+  - [x] 14.1 Move files into the new layout with `git mv`
+    - `public/`: `index.php`, `dayOffRequest.php`, `manageDays.php`, `styles.css`
+    - `src/`: `db.php`, `validation.php`, `nav.php`
+    - `bin/`: `migrate.php`
+    - `data/`: `Db3.db`
+    - Update `.gitignore` to add `data/*.db-wal` and `data/*.db-shm`
+    - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
+
+  - [x] 14.2 Fix include paths, database path, and migration guard
+    - Public pages include `src/` files with `__DIR__ . '/../src/...'`
+    - Files in `src/` include other files using `__DIR__`
+    - Set `DEFAULT_DB_PATH = dirname(__DIR__) . '/data/Db3.db'` in `src/db.php`
+    - Make `nav.php` links resolve under `public/`
+    - `bin/migrate.php` requires `__DIR__ . '/../src/db.php'`; when `PHP_SAPI !== 'cli'` it sends HTTP 403, prints a message, and exits non-zero before opening the database
+    - _Requirements: 13.8, 13.9, 13.10, 13.11, 13.12, 13.13_
+
+  - [x] 14.3 Update and add tests for the new layout
+    - `tests/bootstrap.php` requires files from `../src`
+    - `DataAccessIsolationTest` scans `*.php` in `public/`, `src/`, and `bin/`, excluding `src/db.php`
+    - Add a layout test asserting `public/` contains exactly `index.php`, `dayOffRequest.php`, `manageDays.php`, and `styles.css`, and that `Db3.db`, `db.php`, `migrate.php`, and `composer.json` are not in `public/`
+    - _Requirements: 13.1, 13.5, 13.14_
+
+  - [x] 14.4 Update README and verify the CI workflow
+    - Document the layout, `php -S localhost:8000 -t public` (run from the repository root), and `php bin/migrate.php`
+    - Verify `.github/workflows/tests.yml` needs no change because it runs from the repository root; change it only if a path is stale
+    - _Requirements: 13.6, 13.13, 13.15_
+
+  - [x] 14.5 Smoke-check the built-in server
+    - Start `php -S localhost:8000 -t public` as a background process; send GET requests only and do not submit forms or POST, so `data/Db3.db` is not modified
+    - Confirm `/index.php`, `/dayOffRequest.php`, `/manageDays.php`, and `/styles.css` return 200
+    - Confirm `/Db3.db`, `/data/Db3.db`, `/db.php`, `/src/db.php`, `/migrate.php`, `/bin/migrate.php`, and `/composer.json` return none of the requested file's contents and do not run the script (`php -S` serves the home page for these)
+    - Stop the server
+    - _Requirements: 13.7, 13.10_
+
+- [x] 15. Final checkpoint - Verify compliance
   - Run the full suite with `./vendor/bin/phpunit`
   - Run each page under `E_ALL` and confirm zero warnings or deprecations
-  - Confirm `Db3.db` is unmodified by the test suite (compare hash before and after)
+  - Confirm `data/Db3.db` is unmodified by the test suite (compare hash before and after)
   - Confirm `composer.json` declares `php` `>=8.5`
   - Confirm `composer validate` reports the lock file is up to date
+  - Confirm the moves show as renames in `git status`
   - Ensure all tests pass, ask the user if questions arise.
-  - _Requirements: 8.1, 8.2, 8.3, 10.2_
+  - _Requirements: 8.1, 8.2, 8.3, 10.2, 13.14, 13.15_
 
 ## Notes
 
@@ -263,7 +299,11 @@ This plan implements a complete employee day-off request system with vanilla PHP
     { "id": 2, "tasks": ["9.3"] },
     { "id": 3, "tasks": ["9.5", "10.1", "10.2", "10.3", "10.4"] },
     { "id": 4, "tasks": ["10.5"] },
-    { "id": 5, "tasks": ["13.1", "13.2"] }
+    { "id": 5, "tasks": ["13.1", "13.2"] },
+    { "id": 6, "tasks": ["14.1"] },
+    { "id": 7, "tasks": ["14.2"] },
+    { "id": 8, "tasks": ["14.3", "14.4"] },
+    { "id": 9, "tasks": ["14.5"] }
   ]
 }
 ```

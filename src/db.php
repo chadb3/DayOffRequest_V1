@@ -1,6 +1,9 @@
 <?php
 
-const DEFAULT_DB_PATH = __DIR__ . '/Db3.db';
+// define() instead of const: dirname() is not allowed in a const expression.
+if (!defined('DEFAULT_DB_PATH')) {
+    define('DEFAULT_DB_PATH', dirname(__DIR__) . '/data/Db3.db');
+}
 
 /** Open a connection. $path may be ':memory:' (tests). */
 function getDb(string $path = DEFAULT_DB_PATH): SQLite3 {

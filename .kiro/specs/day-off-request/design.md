@@ -6,29 +6,42 @@ This design describes an employee day-off request system built with vanilla PHP 
 
 The system runs on a local network without authentication (honor system). It has three pages: a landing page, an employee request form, and a management page.
 
-This revision adds engineering requirements (Requirements 8 to 12): a supported PHP version (8.5 or later), a `legacy` branch that preserves the pre-upgrade code, a PHPUnit and Eris test suite, GitHub Actions CI, and a Data Access Layer (DAL) that isolates all database-engine code in `db.php`.
+This revision adds engineering requirements (Requirements 8 to 13): a supported PHP version (8.5 or later), a `legacy` branch that preserves the pre-upgrade code, a PHPUnit and Eris test suite, GitHub Actions CI, a Data Access Layer (DAL) that isolates all database-engine code in `src/db.php`, and a web root separation that places only browser-facing files in `public/`.
 
 ### Key Design Decisions
 
 1. **Parameterized queries everywhere.** The original code interpolates strings into SQL (SQL injection risk). All operations use prepared statements with bound parameters.
-2. **Archive is a table in the same database file.** The requirements glossary defines the Archive_Database as "a separate SQLite database". This design implements it as a second table, `EMPDAYOFFREQ_ARCHIVE`, inside `Db3.db`. Reasons: the move can be a single atomic transaction (a cross-file move would need `ATTACH` and is not atomic across WAL files), backup is one file, and Requirement 5.3 (rollback on failure) stays simple. Requirement 6.2 (same schema plus ARCHIVED_DATE) and Requirements 5.1 to 5.3 are satisfied. Where the requirements say "Archive_Database", read "archive table". If a physically separate file is required, requirements.md should be changed; this design does not assume that.
+2. **Archive is a table in the same database file.** The requirements glossary defines the Archive_Database as "a separate SQLite database". This design implements it as a second table, `EMPDAYOFFREQ_ARCHIVE`, inside `data/Db3.db`. Reasons: the move can be a single atomic transaction (a cross-file move would need `ATTACH` and is not atomic across WAL files), backup is one file, and Requirement 5.3 (rollback on failure) stays simple. Requirement 6.2 (same schema plus ARCHIVED_DATE) and Requirements 5.1 to 5.3 are satisfied. Where the requirements say "Archive_Database", read "archive table". If a physically separate file is required, requirements.md should be changed; this design does not assume that.
 3. **Server-side validation only.** There is no JavaScript framework, so PHP validates on submission.
 4. **Status-based workflow.** Requests flow Pending, then Approved or Denied, then Archived.
-5. **Shared layout via PHP includes.** `nav.php` provides the sidebar on every page.
-6. **Isolated Data Access Layer (Req 12).** `db.php` is the only file that constructs a connection or contains engine-specific SQL. Pages and tests call DAL functions. This keeps a later move to MySQL or MariaDB limited to one file (the migration itself is out of scope).
+5. **Shared layout via PHP includes.** `src/nav.php` provides the sidebar on every page.
+6. **Isolated Data Access Layer (Req 12).** `src/db.php` is the only file that constructs a connection or contains engine-specific SQL. Pages and tests call DAL functions. This keeps a later move to MySQL or MariaDB limited to one file (the migration itself is out of scope).
 7. **E_ALL clean code (Req 8).** Code is written so that no deprecation notice or warning is emitted under `error_reporting(E_ALL)` on PHP 8.5 or later. Tests and CI enforce this.
+8. **Web root separation (Req 13).** Only four browser-facing files live in `public/`, and the server is started with `php -S localhost:8000 -t public`. Serving from the repository root exposed `Db3.db` (employee names, phones, and reasons) for download, let `migrate.php` run from a browser, and made `composer.json`, `docs/`, `.kiro/`, `vendor/`, and `tests/` readable by URL. With `public/` as the document root, none of those paths map to a file, so the response contains none of the requested file's contents and the script is not executed. Under `php -S`, a URI that does not map to a file in `public/` is answered by `public/index.php` (HTTP 200, the home page), so the status is not 404 there; Apache or nginx with `DocumentRoot` or `root` set to `public/` return a real 404. Rationale for the alternatives: an `.htaccess` deny list works only on Apache and fails open if a file is forgotten, and a router script for the built-in server was considered and rejected because it would only change the status code, not the security outcome. A directory boundary needs no per-file rules. The same layout carries over to Apache or nginx by pointing `DocumentRoot` or `root` at `public/` (later LAMP work, out of scope now). **Validates: Requirements 13.1 to 13.5, 13.7**
 
 ## Architecture
 
 ```mermaid
 graph TD
-    A[index.php<br/>Landing Page] --> B[dayOffRequest.php<br/>Employee Form]
-    A --> C[manageDays.php<br/>Management Page]
-    B --> L[db.php<br/>Data Access Layer]
+    subgraph "public/ (Web_Root)"
+        A[index.php<br/>Landing Page] --> B[dayOffRequest.php<br/>Employee Form]
+        A --> C[manageDays.php<br/>Management Page]
+    end
+    subgraph "src/ (not reachable by URL)"
+        L[db.php<br/>Data Access Layer]
+        V[validation.php]
+        N[nav.php]
+    end
+    B --> L
+    B --> V
+    B --> N
     C --> L
-    M[migrate.php] --> L
+    C --> N
+    A --> N
+    M[bin/migrate.php<br/>CLI only] --> L
     T[tests/ PHPUnit + Eris] --> L
-    L --> D[(Db3.db<br/>SQLite3, or :memory: in tests)]
+    T --> V
+    L --> D[(data/Db3.db<br/>SQLite3, or :memory: in tests)]
 
     subgraph "Database Tables"
         D --> E[EMPDAYOFFREQ<br/>Active Requests]
@@ -37,6 +50,58 @@ graph TD
 ```
 
 Pages never call `new SQLite3(...)`, never run `PRAGMA`, and never use `datetime('now','localtime')`. They call DAL functions only.
+
+### Project Layout and Web Root Separation (Req 13)
+
+```
+DayOffRequest_V1/
+├── public/                 # Web_Root: the only directory served to browsers
+│   ├── index.php
+│   ├── dayOffRequest.php
+│   ├── manageDays.php
+│   └── styles.css
+├── src/                    # includes, not reachable by URL
+│   ├── db.php              # Data Access Layer
+│   ├── validation.php
+│   └── nav.php
+├── bin/
+│   └── migrate.php         # CLI-only migration
+├── data/
+│   └── Db3.db              # SQLite database (tracked in git)
+├── tests/
+├── vendor/
+├── docs/
+├── .kiro/
+├── composer.json
+├── composer.lock
+└── phpunit.xml
+```
+
+`public/` contains exactly the four files shown (Req 13.1). `src/` holds `db.php`, `validation.php`, and `nav.php` (Req 13.2). `bin/` holds `migrate.php` (Req 13.3). `data/` holds the Database_File (Req 13.4). `tests/`, `vendor/`, `docs/`, `.kiro/`, `composer.json`, `composer.lock`, and `phpunit.xml` stay at the Repository_Root, outside the Web_Root (Req 13.5).
+
+**Path rules**
+
+- Public pages include `src/` files with `__DIR__`, for example `require_once __DIR__ . '/../src/db.php';`, `require_once __DIR__ . '/../src/validation.php';`, and `require_once __DIR__ . '/../src/nav.php';` (Req 13.8).
+- Files in `src/` include each other with `__DIR__`, for example `require_once __DIR__ . '/validation.php';` (Req 13.9). Because every path is anchored to `__DIR__`, pages load from any current working directory (Req 13.10).
+- `src/db.php` defines `const DEFAULT_DB_PATH = dirname(__DIR__) . '/data/Db3.db';` (Req 13.11).
+- Links in `nav.php` are relative to `public/`, for example `index.php`, `dayOffRequest.php`, and `manageDays.php`, so they resolve to the Web_Root pages when served with `-t public` (Req 13.18).
+- Public pages link the stylesheet as `styles.css` unchanged, because the page and stylesheet are siblings in `public/`.
+
+**Running the application**
+
+```bash
+php -S localhost:8000 -t public   # run from the Repository_Root (Req 13.6)
+```
+
+Requests for `/Db3.db`, `/data/Db3.db`, `/db.php`, `/src/db.php`, `/migrate.php`, `/bin/migrate.php`, and `/composer.json` return none of the requested file's contents and execute no script, because none of those files exist under `public/` (Req 13.7). Under `php -S`, these URIs are answered by `public/index.php` (HTTP 200, the home page) rather than 404; Apache or nginx with the document root set to `public/` return real 404s. For Apache or nginx later, set `DocumentRoot` or `root` to the absolute path of `public/`.
+
+**Repository changes**
+
+- Files are moved with `git mv` so that history is preserved: `index.php`, `dayOffRequest.php`, `manageDays.php`, `styles.css` into `public/`; `db.php`, `validation.php`, `nav.php` into `src/`; `migrate.php` into `bin/`; `Db3.db` into `data/`.
+- `.gitignore` keeps the existing `*.db` rule, and `data/Db3.db` stays tracked (added with `git add -f` or an existing tracked entry carried by `git mv`). It adds `data/*.db-wal` and `data/*.db-shm` so SQLite write-ahead log files are not committed. The glob `*.db` does not match `.db-wal` or `.db-shm`, so the new rules are required.
+- After the move, `./vendor/bin/phpunit` and the CI workflow must pass using the new paths (Req 13.14, 13.15). `tests/bootstrap.php` requires `../src/db.php` and `../src/validation.php`, and `composer.json` needs no change, since it has no autoload entries pointing at moved files.
+
+**Validates: Requirements 13.1 to 13.11, 13.14, 13.15, 13.18**
 
 ### Request Lifecycle
 
@@ -73,7 +138,7 @@ gitGraph
 - `composer.json` declares `"require": { "php": ">=8.5", "ext-sqlite3": "*" }` (Req 8.1, 8.4).
 - 8.5 is the minimum. It is the newest supported branch, and 8.5.12 is the latest security release (21 Oct 2026). The minimum was raised for security reasons.
 - Only the `sqlite3` extension is used for database access. No PDO and no `mysqli` (Req 8.4).
-- The README documents the minimum PHP version and required extensions (`sqlite3`, plus `mbstring` if used), and how to run the app when `php` is not on the PATH, for example by calling the executable with its full path: `C:\path\to\php\php.exe -S 0.0.0.0:8000` from the repository root (Req 8.5, 8.6).
+- The README documents the minimum PHP version and required extensions (`sqlite3`, plus `mbstring` if used), and how to run the app when `php` is not on the PATH, for example by calling the executable with its full path: `C:\path\to\php\php.exe -S localhost:8000 -t public` from the repository root. The README also documents the directory layout (Req 8.5, 8.6, 13.6, 13.17).
 
 ### E_ALL Clean Code (Req 8.2, 8.3)
 
@@ -87,19 +152,19 @@ Coding rules that keep the code free of notices on PHP 8.5 or later:
 
 ## Components and Interfaces
 
-### 1. Data Access Layer (`db.php`)
+### 1. Data Access Layer (`src/db.php`)
 
-The only file that names the database engine (Req 12.1, 12.2). It accepts the database location as a parameter (Req 12.4).
+The only file that names the database engine (Req 12.1, 12.2). It accepts the database location as a parameter (Req 12.4). The default location is resolved from the file's own directory, so it does not depend on the working directory (Req 13.11).
 
 ```php
 declare(strict_types=1);
 
-const DEFAULT_DB_PATH = __DIR__ . '/Db3.db';
+const DEFAULT_DB_PATH = dirname(__DIR__) . '/data/Db3.db';
 
 /** Open a connection. $path may be ':memory:' (tests). */
 function getDb(string $path = DEFAULT_DB_PATH): SQLite3;
 
-/** Create EMPDAYOFFREQ and EMPDAYOFFREQ_ARCHIVE if missing (used by tests and migrate.php). */
+/** Create EMPDAYOFFREQ and EMPDAYOFFREQ_ARCHIVE if missing (used by tests and bin/migrate.php). */
 function createSchema(SQLite3 $db): void;
 
 /** Insert a request; STATUS and SUBMITTED_DATE come from column defaults. Returns the new NUM. */
@@ -123,7 +188,7 @@ function countRequests(SQLite3 $db): int;
 function getArchivedRequestById(SQLite3 $db, int $num): ?array;
 ```
 
-Engine-specific content kept inside `db.php`:
+Engine-specific content kept inside `src/db.php`:
 
 - `new SQLite3($path)`, `busyTimeout(5000)`, `PRAGMA journal_mode = WAL` (skipped for `:memory:`, where WAL does not apply), and optionally `PRAGMA foreign_keys`.
 - `datetime('now','localtime')` in column defaults and in the archive insert (`ARCHIVED_DATE`).
@@ -157,7 +222,7 @@ function archiveRequest(SQLite3 $db, int $num): bool {
 
 Test seam: `archiveRequest` receives the connection, so a test can drop `EMPDAYOFFREQ_ARCHIVE` first to force a failure and then assert the active row remains (Req 5.3, 10.4).
 
-Validation lives outside the DB code, in a small pure function so it can be tested without a database. It is placed in `validation.php` (no SQL, so it is not part of the DAL):
+Validation lives outside the DB code, in a small pure function so it can be tested without a database. It is placed in `src/validation.php` (no SQL, so it is not part of the DAL):
 
 ```php
 const ALLOWED_REASONS = ['Medical', 'Dental', 'Family Emergency', 'Personal', 'Other'];
@@ -166,27 +231,49 @@ const ALLOWED_REASONS = ['Medical', 'Dental', 'Family Emergency', 'Personal', 'O
 function validateRequest(array $input): array;
 ```
 
-### 2. Navigation Include (`nav.php`)
+### 2. Navigation Include (`src/nav.php`)
 
-Sidebar rendered on every page with links to Home, Request Day Off, and View Days Off (Req 7.1). Header and footer styling comes from `styles.css` (Req 7.2).
+Sidebar rendered on every page with links to Home, Request Day Off, and View Days Off (Req 7.1). The links are relative to `public/` (`index.php`, `dayOffRequest.php`, `manageDays.php`) so they resolve when served with `-t public` (Req 13.18). Header and footer styling comes from `public/styles.css`, linked as `styles.css` (Req 7.2).
 
-### 3. Request Form Page (`dayOffRequest.php`)
+### 3. Request Form Page (`public/dayOffRequest.php`)
 
+- Includes `../src/db.php`, `../src/validation.php`, and `../src/nav.php` through `__DIR__` paths (Req 13.8).
 - Renders fields: name, phone, shifts, substitute, and a reason dropdown (Medical, Dental, Family Emergency, Personal, Other).
 - On POST: `validateRequest()`. On errors, shows messages and preserves entered values. On success, calls `insertRequest()` and shows a confirmation.
 - Gets its connection by calling `getDb()`.
 - Input: POST `name`, `phone`, `shifts`, `sub`, `reason`.
 
-### 4. Management Page (`manageDays.php`)
+### 4. Management Page (`public/manageDays.php`)
 
+- Includes `../src/db.php` and `../src/nav.php` through `__DIR__` paths (Req 13.8).
 - Pending view (default) and history view via GET `view` (`pending` or `history`).
 - POST actions `approve`, `deny`, `archive` with request `id`, using `updateRequestStatus()` and `archiveRequest()`, then POST-Redirect-GET.
 - On archive failure: shows an error message and the record stays in the active table.
 - Shows "no pending requests" when the pending list is empty.
 
-### 5. Migration Script (`migrate.php`)
+### 5. Migration Script (`bin/migrate.php`)
 
-One-time script that upgrades an existing `Db3.db`: adds `STATUS` and `SUBMITTED_DATE` when missing, then creates the archive table. It calls a DAL migration function (`migrateSchema(SQLite3 $db)`) and holds no engine SQL itself. It is safe to run more than once.
+One-time script that upgrades an existing `data/Db3.db`: adds `STATUS` and `SUBMITTED_DATE` when missing, then creates the archive table. It calls a DAL migration function (`migrateSchema(SQLite3 $db)`) and holds no engine SQL itself. It is safe to run more than once.
+
+- It requires the DAL with `require_once __DIR__ . '/../src/db.php';`.
+- Its first action is a SAPI guard, before the DAL is used and before any database is opened: when `PHP_SAPI !== 'cli'` it prints a message and exits with a non-zero code, leaving `Db3.db` untouched (Req 13.12).
+- Run from the command line it migrates `data/Db3.db` (Req 13.13): `php bin/migrate.php`.
+- It lives outside `public/`, so the built-in server cannot serve it. The SAPI guard is a second layer in case the file is ever copied into a web-served directory.
+
+```php
+<?php
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    echo "migrate.php can only be run from the command line.\n";
+    exit(1);
+}
+
+require_once __DIR__ . '/../src/db.php';
+```
+
+**Validates: Requirements 13.3, 13.12, 13.13**
 
 ### 6. Test Suite (`tests/`)
 
@@ -194,7 +281,7 @@ One-time script that upgrades an existing `Db3.db`: adds `STATUS` and `SUBMITTED
 composer.json
 phpunit.xml
 tests/
-  bootstrap.php            # error_reporting(E_ALL); requires db.php, validation.php; autoload
+  bootstrap.php            # error_reporting(E_ALL); requires ../src/db.php and ../src/validation.php; autoload
   DbTestCase.php           # base class: setUp() opens getDb(':memory:') and calls createSchema()
   Generators.php           # Eris generators: valid request data, SQL-metacharacter strings, blank fields
   Unit/
@@ -215,9 +302,9 @@ tests/
 - `<ini name="error_reporting" value="-1"/>` and `<ini name="display_errors" value="1"/>` so E_ALL is active (Req 11.7).
 - `cacheDirectory` set to `.phpunit.cache` (added to `.gitignore`).
 
-`DalIsolationTest` reads the Application PHP files other than `db.php` and `tests/` and asserts that none contains `new SQLite3`, `PRAGMA`, or `datetime(` (Req 12.1 to 12.3).
+`DalIsolationTest` (the existing file is `tests/Unit/DataAccessIsolationTest.php`) scans every `*.php` file in `public/`, `src/`, and `bin/`, excluding `src/db.php`, and asserts that none contains `new SQLite3`, `PRAGMA`, or `datetime(` (Req 12.1 to 12.3, 13.16). Paths are built from `dirname(__DIR__, 2)` so the test works from any working directory. `tests/` is not scanned.
 
-Tests never open `Db3.db`: the base class always passes `':memory:'` (Req 10.2). `composer.json` lists `phpunit/phpunit` and `giorgiosironi/eris` under `require-dev` (Req 10.7). The suite runs with `./vendor/bin/phpunit` from the repository root (Req 10.1). PHPUnit exits non-zero on any failure (Req 10.6).
+Tests never open `data/Db3.db`: the base class always passes `':memory:'` (Req 10.2). `composer.json` lists `phpunit/phpunit` and `giorgiosironi/eris` under `require-dev` (Req 10.7). The suite runs with `./vendor/bin/phpunit` from the repository root (Req 10.1). PHPUnit exits non-zero on any failure (Req 10.6).
 
 ### 7. Continuous Integration (`.github/workflows/tests.yml`)
 
@@ -296,7 +383,7 @@ jobs:
 | SUBMITTED_DATE | TEXT | NOT NULL |
 | ARCHIVED_DATE | TEXT | NOT NULL DEFAULT (datetime('now','localtime')) |
 
-### Schema SQL (inside `db.php`)
+### Schema SQL (inside `src/db.php`)
 
 ```sql
 CREATE TABLE IF NOT EXISTS EMPDAYOFFREQ (
@@ -410,7 +497,10 @@ Property-based testing applies here because the core logic (validation, insert, 
 - Archive rollback: drop the archive table, call `archiveRequest()`, assert it returns false and the active row remains (Req 5.3, 10.4)
 - Schema columns and defaults via `PRAGMA table_info` called from a DAL helper (Req 6.1, 6.2)
 - `getDb(':memory:')` returns a working connection (Req 12.4)
-- DAL isolation static check described above (Req 12.1 to 12.3)
+- DAL isolation static check described above, scanning `public/`, `src/`, and `bin/` (Req 12.1 to 12.3, 13.16)
+- Web root separation smoke checks: `public/` contains exactly `index.php`, `dayOffRequest.php`, `manageDays.php`, and `styles.css`; `src/`, `bin/`, and `data/` hold the files listed in the layout; `DEFAULT_DB_PATH` equals the absolute path of `data/Db3.db` (Req 13.1 to 13.5, 13.11)
+- `bin/migrate.php` run under a non-CLI SAPI exits non-zero without opening the database (Req 13.12), checked by a source-level assertion that the guard precedes the `require_once`
+- Manual or CI smoke check with the built-in server: `/Db3.db`, `/data/Db3.db`, `/db.php`, `/src/db.php`, `/migrate.php`, `/bin/migrate.php`, and `/composer.json` return responses containing none of the requested file's contents and execute no script (under `php -S` the response is the home page with HTTP 200, not 404); pages load when the server is started from another working directory (Req 13.7, 13.10)
 - Navigation include contains the three links (Req 7.1)
 - Form renders required fields and reason options (Req 1.5); confirmation message after valid submit (Req 1.4)
 
@@ -435,7 +525,7 @@ Library: [Eris](https://github.com/giorgiosironi/eris) on PHPUnit. Do not write 
 
 ### Test Environment
 
-- Database: `getDb(':memory:')` only. `Db3.db` is never read or modified (Req 10.2).
+- Database: `getDb(':memory:')` only. `data/Db3.db` is never read or modified (Req 10.2).
 - Isolation: each test creates a fresh schema with `createSchema()`.
 - Strictness: E_ALL, with warnings, notices, and deprecations failing the run (Req 8.2, 8.3, 11.7).
 - No network access needed.
@@ -461,7 +551,7 @@ Carried over from requirements.md.
 
 - **LAMP migration:** out of scope. The DAL (Req 12) keeps it feasible.
 - **Database engine:** whether to move from SQLite to MySQL or MariaDB, and how `Db3.db` data transfers, is undecided.
-- **Web server:** whether Apache on Linux is used, and whether network deployment needs more than the PHP built-in server, is undecided.
+- **Web server:** the application is served with `php -S localhost:8000 -t public` (Req 13). Whether Apache on Linux is used later, and whether network deployment needs more than the built-in server, is undecided. If Apache or nginx is used, `DocumentRoot` or `root` points at `public/`.
 - **PHP patch level:** the minimum is 8.5; the patch release installed locally is chosen from php.net at implementation time.
 - **Authentication:** unchanged; honor system, no login.
 

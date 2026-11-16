@@ -1,5 +1,5 @@
 <?php
-require_once 'db.php';
+require_once __DIR__ . '/../src/db.php';
 
 // Handle approve/deny/archive POST actions
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['id'], $_POST['action'])) {
@@ -51,7 +51,7 @@ $db->close();
 
     <h1 id="head">Manage Days Off</h1>
 
-    <?php include 'nav.php'; ?>
+    <?php include __DIR__ . '/../src/nav.php'; ?>
 
 <div id="body">
 

@@ -14,14 +14,17 @@ This feature implements a complete employee day-off request system for a busines
 - **Status**: The current state of a request, one of: Pending, Approved, or Denied
 - **Archive_Database**: A separate SQLite database where completed (approved/denied) requests can be moved for record-keeping
 - **EMPDAYOFFREQ**: The SQLite table storing active day-off requests
-- **Application**: The vanilla PHP and SQLite3 web application consisting of index.php, dayOffRequest.php, manageDays.php, db.php, nav.php, and migrate.php
+- **Application**: The vanilla PHP and SQLite3 web application consisting of public/index.php, public/dayOffRequest.php, public/manageDays.php, public/styles.css, src/db.php, src/validation.php, src/nav.php, and bin/migrate.php
 - **Supported_PHP_Version**: PHP 8.5 or later within a release branch that currently receives security patches from the PHP project. PHP 8.5 is the minimum version; the version in use is confirmed against php.net supported versions when the work is implemented
-- **Data_Access_Layer**: The code that opens the database connection and is the only code that names the database engine, currently db.php
+- **Data_Access_Layer**: The code that opens the database connection and is the only code that names the database engine, currently src/db.php
 - **Main_Branch**: The Git branch named `master`, which holds the repository's primary history
 - **Legacy_Branch**: The Git branch named `legacy`, which preserves the Application as it exists before this work
 - **Dev_Branch**: The Git branch named `kiro-dev`, on which this work is performed
 - **CI_Workflow**: A GitHub Actions workflow file stored under the `.github/workflows` directory
 - **Test_Suite**: The PHPUnit tests under the `tests/` directory, including unit tests and Eris property-based tests that use an in-memory SQLite database
+- **Web_Root**: The `public/` directory at the repository root, which is the document root of the PHP built-in server and the only directory whose files can be requested by URL
+- **Repository_Root**: The top-level directory of the Git repository, which contains `public/`, `src/`, `bin/`, `data/`, `tests/`, `vendor/`, `docs/`, `.kiro/`, `composer.json`, and `phpunit.xml`
+- **Database_File**: The SQLite file `data/Db3.db` and its write-ahead log companions `data/Db3.db-wal` and `data/Db3.db-shm`
 
 ## Requirements
 
@@ -106,7 +109,7 @@ This feature implements a complete employee day-off request system for a busines
 3. WHEN any Application file is executed on the Supported_PHP_Version with error_reporting set to E_ALL, THE Application SHALL emit zero warnings
 4. THE Application SHALL use only the sqlite3 PHP extension for database access
 5. THE README SHALL document the minimum Supported_PHP_Version and the PHP extensions the Application requires
-6. THE README SHALL document how to run the Application when the php executable is not on the system PATH
+6. THE README SHALL document how to run the Application with `php -S localhost:8000 -t public`, including how to run that command when the php executable is not on the system PATH
 
 ### Requirement 9: Preserve Current State in a Legacy Branch
 
@@ -158,6 +161,31 @@ This feature implements a complete employee day-off request system for a busines
 3. WHEN a page needs database access, THE page SHALL obtain the connection through a function defined in the Data_Access_Layer
 4. THE Data_Access_Layer SHALL accept the database location as a parameter so that the Test_Suite can supply an in-memory database
 
+### Requirement 13: Web Root Separation
+
+**User Story:** As a developer, I want only browser-facing files inside the Web_Root, so that the database, migration script, and project files cannot be downloaded or run through a URL.
+
+#### Acceptance Criteria
+
+1. THE Web_Root SHALL contain exactly these files and no others: index.php, dayOffRequest.php, manageDays.php, and styles.css
+2. THE Application SHALL keep db.php, validation.php, and nav.php in the `src/` directory at the Repository_Root
+3. THE Application SHALL keep migrate.php in the `bin/` directory at the Repository_Root
+4. THE Application SHALL keep the Database_File in the `data/` directory at the Repository_Root
+5. THE Repository_Root SHALL keep `tests/`, `vendor/`, `docs/`, `.kiro/`, composer.json, composer.lock, and phpunit.xml outside the Web_Root
+6. THE README SHALL document starting the Application with the command `php -S localhost:8000 -t public` run from the Repository_Root
+7. WHILE the Application is served with `php -S localhost:8000 -t public`, WHEN a client requests /Db3.db, /data/Db3.db, /db.php, /src/db.php, /migrate.php, /bin/migrate.php, or /composer.json, THE PHP built-in server SHALL return a response body that contains none of the contents of the requested file and SHALL NOT execute the requested script
+8. THE pages in the Web_Root SHALL include files from `src/` using paths built from the `__DIR__` constant
+9. THE files in `src/` SHALL include other files using paths built from the `__DIR__` constant
+10. WHEN the Application is started from any current working directory with the Web_Root as the document root, THE pages in the Web_Root SHALL load without include errors
+11. THE Data_Access_Layer SHALL define DEFAULT_DB_PATH as the absolute path of `data/Db3.db`, resolved from the `__DIR__` constant of `src/db.php`
+12. WHEN bin/migrate.php is executed and PHP_SAPI is not 'cli', THE migration script SHALL terminate without opening the database and without modifying the Database_File
+13. WHEN bin/migrate.php is executed from the command line, THE migration script SHALL apply the schema migration to `data/Db3.db`
+14. WHEN `./vendor/bin/phpunit` is run from the Repository_Root after the restructuring, THE Test_Suite SHALL pass using the new file paths
+15. WHEN the CI_Workflow runs after the restructuring, THE CI_Workflow SHALL pass using the new file paths
+16. WHEN the Test_Suite runs the data-access isolation test after the restructuring, THE data-access isolation test SHALL scan `src/` and `public/` and pass, which confirms that only the Data_Access_Layer constructs database connections and contains engine-specific SQL
+17. THE README SHALL document the directory layout of `public/`, `src/`, `bin/`, `data/`, and `tests/`
+18. THE navigation links in nav.php SHALL resolve to the pages in the Web_Root when the Application is served with `php -S localhost:8000 -t public`
+
 ## Out of Scope and Decisions
 
 ### Out of Scope
@@ -172,5 +200,6 @@ The following items are not requirements of this version.
 ### Decisions
 
 - **Database engine**: The Application stays on SQLite (Db3.db, sqlite3 PHP extension).
-- **Web server**: The Application is served with the PHP built-in server (`php -S`).
+- **Web server**: The Application is served with the PHP built-in server using `php -S localhost:8000 -t public`, so that only the Web_Root is reachable by URL (Requirement 13).
+- **Web root separation**: Only browser-facing files live in `public/`. Serving from the repository root exposed Db3.db (employee names, phones, and reasons), allowed migrate.php to run from a browser, and made composer.json, docs/, .kiro/, vendor/, and tests/ readable by URL.
 - **PHP patch level**: The development machine runs PHP 8.5.12 (NTS, x64, Windows), which satisfies the 8.5 minimum. CI uses the latest PHP 8.5 patch release per Requirement 11. The minimum was raised from PHP 8.3 to PHP 8.5 for security reasons following a recent PHP security issue; PHP 8.5 is the newest supported branch (active support until 31 Dec 2027, security support until 31 Dec 2029 per php.net).
