@@ -1,11 +1,47 @@
 <?php
+require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/validation.php';
 
-$a_var="Hello World!";
+$errors = [];
+$success = false;
 
-            $location="Db3.db";
-	    $db = new SQLite3($location);
-	    $result=$db->querySingle("select NAME from EMPDAYOFFREQ WHERE NUM=1");
+// Preserve submitted values for re-display on validation failure
+$formData = [
+    'name' => '',
+    'phone' => '',
+    'shifts' => '',
+    'sub' => '',
+    'reason' => ''
+];
 
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    // Collect form data
+    $formData['name'] = isset($_POST['name']) ? $_POST['name'] : '';
+    $formData['phone'] = isset($_POST['phone']) ? $_POST['phone'] : '';
+    $formData['shifts'] = isset($_POST['shifts']) ? $_POST['shifts'] : '';
+    $formData['sub'] = isset($_POST['sub']) ? $_POST['sub'] : '';
+    $formData['reason'] = isset($_POST['reason']) ? $_POST['reason'] : '';
+
+    // Validate via shared validation (field => message)
+    $errors = validateRequest($formData);
+
+    // If no errors, insert into database
+    if (empty($errors)) {
+        $db = getDb();
+        insertRequest($db, $formData);
+        $db->close();
+        $success = true;
+
+        // Clear form data after successful submission
+        $formData = [
+            'name' => '',
+            'phone' => '',
+            'shifts' => '',
+            'sub' => '',
+            'reason' => ''
+        ];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -16,56 +52,40 @@ $a_var="Hello World!";
 </head>
 <body>
 
-	
 	<h1 id="head">Day off request form!</h1>
-	<div id="side"> 
-		<ul>
-			<a href="index.php"><li>Home</li></a>
-			<a href="dayOffRequest.php"><li>Request Day Off</li></a>
-			<a href="manageDays.php"><li>View Days Off</li></a>
-			<li id='special' ><?php /*echo*/var_dump($result)/*$a_var*/  ?></li>
-		</ul>
-		
-	</div>
-	
-	
-	
+
+	<?php include 'nav.php'; ?>
+
 <!--Body of the html has all the form actions and button!-->
 <div id="body">
 
-	<form method='POST'>
-		Name:<input type="text" name="name"><br>
-		Phone:<input type="text" name="phone"><br>
-		Shifts:<input type="text" name=shifts"><br>
-		Sub:<input type="text" name ="sub"><br>
+	<?php if ($success): ?>
+		<p style="color: green; font-weight: bold;">Your day-off request has been submitted successfully!</p>
+	<?php endif; ?>
+
+	<?php if (!empty($errors)): ?>
+		<div style="color: red;">
+			<ul>
+			<?php foreach ($errors as $error): ?>
+				<li><?php echo htmlspecialchars($error); ?></li>
+			<?php endforeach; ?>
+			</ul>
+		</div>
+	<?php endif; ?>
+
+	<form method="POST">
+		Name:<input type="text" name="name" value="<?php echo htmlspecialchars($formData['name']); ?>"><br>
+		Phone:<input type="text" name="phone" value="<?php echo htmlspecialchars($formData['phone']); ?>"><br>
+		Shifts:<input type="text" name="shifts" value="<?php echo htmlspecialchars($formData['shifts']); ?>"><br>
+		Sub:<input type="text" name="sub" value="<?php echo htmlspecialchars($formData['sub']); ?>"><br>
 		Reason:<select name="reason">
-				  <option value="Medical">Medical</option>
-			      <option value="Dential">Dential</option>
-			      <option value="Family Emergency">Family Emergency</option>
-			      <option value="Personal">Personal</option>
-			      <option value="Other">Other</option>
+				  <?php foreach (ALLOWED_REASONS as $reasonOption): ?>
+				  <option value="<?php echo htmlspecialchars($reasonOption); ?>"<?php if ($formData['reason'] === $reasonOption) echo ' selected'; ?>><?php echo htmlspecialchars($reasonOption); ?></option>
+				  <?php endforeach; ?>
 			  </select><br>
-	<input type="submit" name = "submit" value="Send">
+		<input type="submit" name="submit" value="Send">
 	</form>
-	
-	<?php
-		if(isset($_POST['submit']))
-		{
-			$name=$_POST["name"];
-			$phone=$_POST["phone"];
-			$reason=$_POST["reason"];	
-			
-			$insert_statment= "INSERT INTO EMPDAYOFFREQ 
-			VALUES (null,'$name','$phone','$reason');";
-			$db = new MyDB();
-			
-			$db->exec($insert_statment);
-			echo "It worked!";
-			$db->close();
-		}
-	 ?>
-	
-	
+
 </div>
 <!--Bottom div with information -->
 <div id="bottom_div">
@@ -73,5 +93,4 @@ $a_var="Hello World!";
 </div>
 
 </body>
-
 </html>

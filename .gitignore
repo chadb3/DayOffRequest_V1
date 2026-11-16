@@ -1,0 +1,45 @@
+# Kiro: .kiro/ is tracked so specs and project settings are shared.
+# Per-machine task run state (chat session IDs, timestamps) stays local.
+.kiro/**/tasks.meta.json
+
+# SQLite database files
+*.db
+
+# Composer dependencies
+/vendor/
+composer.lock
+
+# PHPUnit cache
+.phpunit.cache/
+
+# PHP
+*.log
+*.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment and secrets
+.env
+.env.*
+*.env
+*secret*
+*token*
+*apikey*
+*credentials*
+*.pem
+*.key
+# Local and user-specific settings
+local.settings.json
+*.local.json
+user.config
+*.user
