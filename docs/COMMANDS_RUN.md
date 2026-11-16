@@ -96,3 +96,25 @@ The task 13.2 sub-agent edited `README.MD` only and ran no commands.
 |---|---|
 | Change the CI matrix to PHP 8.5 only, then commit and push (commit `9e296af`) | edited `.github/workflows/tests.yml`; `git add`, `git commit`, `git push` |
 | Commit and push the PHP 8.5 minimum | `git add composer.json README.MD docs/COMMANDS_RUN.md; git commit -m "..."; git push` |
+
+## 5. Tracking the `.kiro` folder in git
+
+These commands removed `.kiro/` from `.gitignore`, so the spec files are shared in the repository, and added ignore rules for secrets and machine-specific files. Before the change, the `.kiro` files were checked for secrets.
+
+### Run directly by the orchestrator
+
+| # | Purpose | Command |
+|---|---|---|
+| 20 | Show `.gitignore` and list every file in `.kiro` with its size | `Get-Content .gitignore; Get-ChildItem -Recurse -Force -File .kiro \| ForEach-Object { ... }` |
+| 21 | Show `.config.kiro`, and search `.kiro` for secrets and personal paths (no matches) | `Get-Content .kiro\specs\day-off-request\.config.kiro; Get-ChildItem -Recurse -Force -File .kiro \| Select-String -Pattern 'api[_-]?key\|secret\|token\|password\|passwd\|credential\|BEGIN (RSA\|OPENSSH\|PRIVATE)\|ghp_\|github_pat_\|AKIA[0-9A-Z]{16}\|sk-[A-Za-z0-9]{20}\|bearer '`, then the same search with `'C:\\Users\|chadb'` |
+| 22 | Inspect `tasks.meta.json` (it holds chat session IDs and test-run timestamps, so it was kept local) | `Select-String -Path .kiro\specs\day-off-request\tasks.meta.json -Pattern ...; (Get-Content ... -Raw).Substring(0,600)` |
+| 23 | Rewrite `.gitignore`, then check what git would add and what is now ignored | `$c = Get-Content .gitignore -Raw; ... -replace ...; Set-Content .gitignore ...; git status --short; git add --dry-run .kiro; git status --short --ignored \| Select-String '^!!'` |
+| 24 | Append this section | `Add-Content docs/COMMANDS_RUN.md ...` |
+
+In command 23, `git add --dry-run` only lists what would be staged. It does not stage anything.
+
+### Run by the developer
+
+| Purpose | Command |
+|---|---|
+| Check the staged changes, then commit and push the `.kiro` tracking change | `git add .gitignore .kiro docs/COMMANDS_RUN.md; git diff --cached --stat; git commit -m "chore: track Kiro project configuration" ...; git push` |
