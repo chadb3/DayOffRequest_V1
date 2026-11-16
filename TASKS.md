@@ -59,6 +59,20 @@ These are the manual steps you need to do on your Linux VM to get things running
   ```
 - [ ] Other machines on the LAN can access it at `http://<your-vm-ip>:8080`
 
+## 7. Security Automation (added on Kiro-Modernization)
+
+Added outside the IDE modernization conversation — see `MODERNIZATION_NOTES.md`
+for full detail so the modernization spec picks these up.
+
+- [x] Un-ignore `composer.lock` so it is tracked (reproducible installs + audit)
+- [x] Add `.github/dependabot.yml` (Composer + GitHub Actions, weekly)
+- [x] Add `.github/workflows/security-audit.yml` (`composer audit`; opens an
+      issue on scheduled/push findings, fails the check on PRs)
+- [ ] **At merge:** switch automation target branch from `Kiro-Modernization`
+      to `main` (dependabot.yml + security-audit.yml; consider tests.yml too)
+- [ ] **Future (if containerized):** add runtime-CVE image scanning (e.g. Trivy)
+      — `composer audit` does not cover PHP/Apache/MySQL runtime CVEs
+
 ## Notes
 
 - The `Db3.db` file needs to be writable by the PHP process

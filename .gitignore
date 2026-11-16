@@ -7,7 +7,8 @@
 
 # Composer dependencies
 /vendor/
-composer.lock
+# composer.lock is intentionally tracked: this is an application, so a committed
+# lock file gives reproducible installs and reliable `composer audit` results.
 
 # PHPUnit cache
 .phpunit.cache/

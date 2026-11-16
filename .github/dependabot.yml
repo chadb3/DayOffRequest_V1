@@ -1,0 +1,26 @@
+# Dependabot configuration for DayOffRequest_V1
+#
+# NOTE: target-branch is currently "Kiro-Modernization" (the active
+# modernization branch). When modernization merges and the default branch
+# becomes "main", switch target-branch below to "main" (see MODERNIZATION_NOTES.md).
+version: 2
+updates:
+  # Composer (PHP) dependencies
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "Kiro-Modernization"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+
+  # Keep GitHub Actions used in CI patched (checkout, setup-php, etc.)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "Kiro-Modernization"
+    labels:
+      - "dependencies"
