@@ -41,3 +41,62 @@ Since the app runs PHP directly (no container yet), there is no automated
 runtime-CVE scan. If the LAMP modernization containerizes the app, add image
 scanning (e.g. Trivy) using the same "open an issue on findings" pattern to
 cover PHP/Apache/MySQL runtime CVEs.
+
+
+## 4. Staged modernization plan (LAMP -> containerize)
+
+Captured from discussion; to be folded into the IDE modernization spec.
+The staging approach is deliberate: each stage is independently valuable and
+testable, and we containerize a known-good app rather than debugging app logic
+and container config at once.
+
+### Stage 1 — LAMP
+- [ ] 1a. Serve via Apache + PHP-FPM (replace the `php -S` built-in dev server)
+- [ ] 1b. Migrate database SQLite -> MySQL/MariaDB  **(the real work of this stage)**
+      - Current app uses SQLite (`ext-sqlite3`, `data/Db3.db`); moving to MySQL
+        means SQL dialect changes, a connection/credentials layer, migrations,
+        and rework in `src/db.php`.
+      - Option: keep SQLite while adding Apache + PHP-FPM first, then do the
+        MySQL migration as its own discrete step to keep changes small.
+
+### Stage 2 — Containerize
+- [ ] 2a. Dockerfile (`FROM php:8.5-fpm`) + compose (app + db services)
+- [ ] 2b. Add image scanning (Trivy/Grype) — closes the PHP/Apache/MySQL
+      runtime-CVE gap that `composer audit` cannot cover (see sections 2 & 5).
+
+### Why this order
+- LAMP first gives a properly-served, working app before adding container
+  complexity.
+- Containerizing an already-working app is far easier than doing both at once.
+- Biggest change in Stage 1 is the DB ("M"), not the web server — treat it as
+  its own sub-stage.
+
+## 5. PHP runtime upgrades: make the next PHP CVE a non-event
+
+Context: a PHP runtime CVE is infrastructure-level work, not an app-package
+update. Real-world experience shows a PHP version bump is a *compatibility
+event*, not a drop-in swap — "just run it on the new version" commonly fails
+because deprecated APIs/behavior changes break code, and/or dependencies don't
+yet support the new PHP. Expect to (a) rebuild/redeploy the artifact and
+(b) fix code/deps the new runtime rejects.
+
+Defenses to build in (in order of leverage):
+- [ ] **Test against the next PHP version in CI early.** `tests.yml` already runs
+      a PHP matrix (`php: ['8.5']`). Add the upcoming version (e.g.
+      `['8.5', '8.6']`) ahead of time so CI flags incompatibilities *before*
+      deployment — turns an emergency into a planned fix.
+- [ ] **OS-level auto-patching + notification.** `unattended-upgrades` already
+      auto-patches PHP on the Ubuntu VM (saw it bump to 8.5.4). Configure
+      email/alerting so runtime patches are visible and just need a service
+      restart confirmation.
+- [ ] **Early-warning CVE feed (works without containers).** Scheduled job
+      polling OSV/NVD for the `php` product that opens an issue on new entries —
+      day-zero awareness to plan a maintenance window.
+- [ ] **Containerize (Stage 2) for repeatable upgrades.** Moving PHP versions
+      becomes "change base image tag, rebuild, redeploy" — testable in CI and
+      rolled out identically everywhere, instead of hand-patching servers.
+- [ ] **Staging + smoke tests** to validate a PHP bump quickly rather than
+      manually re-testing by hand (where the "all day" usually goes).
+
+Note: containerization makes the *rebuild/redeploy* trivial; a good test matrix
+makes the *compatibility* safe. Both are needed — they solve different halves.
