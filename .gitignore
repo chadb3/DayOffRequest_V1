@@ -43,3 +43,6 @@ local.settings.json
 *.local.json
 user.config
 *.user
+# SQLite WAL/SHM sidecar files
+data/*.db-wal
+data/*.db-shm

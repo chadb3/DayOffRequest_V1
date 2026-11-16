@@ -1,5 +1,5 @@
 <?php
-require_once 'db.php';
+require_once __DIR__ . '/../src/db.php';
 ?>
 
 <!DOCTYPE html>
@@ -10,7 +10,7 @@ require_once 'db.php';
 </head>
 <body>
 	<h1 id="head">Day off request form!</h1>
-	<?php include 'nav.php'; ?>
+	<?php include __DIR__ . '/../src/nav.php'; ?>
 
 <!--Body of the html has all the form actions and button!-->
 <div id="body">

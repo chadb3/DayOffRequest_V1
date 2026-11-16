@@ -1,6 +1,9 @@
 <?php
 
-const DEFAULT_DB_PATH = __DIR__ . '/Db3.db';
+// define() instead of const: dirname() is not allowed in a const expression.
+if (!defined('DEFAULT_DB_PATH')) {
+    define('DEFAULT_DB_PATH', dirname(__DIR__) . '/data/Db3.db');
+}
 
 /** Open a connection. $path may be ':memory:' (tests). */
 function getDb(string $path = DEFAULT_DB_PATH): SQLite3 {
@@ -37,11 +40,15 @@ function createSchema(SQLite3 $db): void {
     )");
 }
 
-/** Insert a request; STATUS and SUBMITTED_DATE come from column defaults. Returns the new NUM. */
+/**
+ * Insert a request. STATUS comes from the column default. SUBMITTED_DATE is set
+ * explicitly because migrated tables have DEFAULT '' for that column.
+ * Returns the new NUM.
+ */
 function insertRequest(SQLite3 $db, array $data): int {
     $stmt = $db->prepare(
-        'INSERT INTO EMPDAYOFFREQ (NAME, PHONE, SHIFTS, SUB, REASON)
-         VALUES (:name, :phone, :shifts, :sub, :reason)'
+        "INSERT INTO EMPDAYOFFREQ (NAME, PHONE, SHIFTS, SUB, REASON, SUBMITTED_DATE)
+         VALUES (:name, :phone, :shifts, :sub, :reason, datetime('now','localtime'))"
     );
     if ($stmt === false) {
         throw new RuntimeException('Failed to prepare insert: ' . $db->lastErrorMsg());

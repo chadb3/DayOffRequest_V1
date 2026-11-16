@@ -118,3 +118,87 @@ In command 23, `git add --dry-run` only lists what would be staged. It does not 
 | Purpose | Command |
 |---|---|
 | Check the staged changes, then commit and push the `.kiro` tracking change | `git add .gitignore .kiro docs/COMMANDS_RUN.md; git diff --cached --stat; git commit -m "chore: track Kiro project configuration" ...; git push` |
+
+## 6. Restructuring into a public web root
+
+These commands moved the project into `public/`, `src/`, `bin/` and `data/`, so only `public/` is reachable by URL (spec Requirement 13, tasks 14 and 15). Before this change, `php -S` served the repository root, so `Db3.db` could be downloaded from a browser.
+
+From this section on, files are at their new paths. Sections 1 to 5 use the old root paths, such as `db.php` and `Db3.db`, because they record commands run before the move.
+
+### Run directly by the orchestrator
+
+| # | Purpose | Command |
+|---|---|---|
+| 25 | Confirm the branch is `kiro-dev` with no uncommitted changes | `git branch --show-current; git status -sb; git log --oneline -1` |
+| 26 | Check the branch against `master` and the size of the change | `git fetch origin; git status -sb; git log --oneline origin/master..origin/kiro-dev; git log --oneline origin/kiro-dev..origin/master; git diff --stat origin/master...origin/kiro-dev` (it also tried `gh run list`, but the GitHub CLI isn't installed) |
+| 27 | Read the CI results saved from the GitHub API | `Get-Content <saved web_fetch output> -Raw \| ConvertFrom-Json` (last 5 runs on `kiro-dev`: all passed) |
+| 28 | List the changed files against `master` | `git diff --stat origin/master...origin/kiro-dev` |
+| 29 | Append this section | `Add-Content docs/COMMANDS_RUN.md ...` |
+
+The CI results came from the public GitHub API (`api.github.com/repos/chadb3/DayOffRequest_V1/actions/runs`), fetched with a web request rather than a shell command.
+
+### Reported by sub-agents
+
+`$php` stands for `C:\php\php-8.5.12-1-nts-Win32-vs17-x64\php.exe`.
+
+| Task | Purpose | Command (as reported) |
+|---|---|---|
+| 14.1 | Check the branch and the starting state | `git branch --show-current; git status --short; Get-Content .gitignore; Get-ChildItem -Force` |
+| 14.1 | Confirm `Db3.db` is tracked | `git ls-files Db3.db` |
+| 14.1 | Create the folders | `mkdir public,src,bin,data` |
+| 14.1 | **Move files, keeping git history** | `git mv index.php dayOffRequest.php manageDays.php styles.css public/`; `git mv db.php validation.php nav.php src/`; `git mv migrate.php bin/`; `git mv Db3.db data/` |
+| 14.1 | Check the `.gitignore` change (adds `data/*.db-wal`, `data/*.db-shm`) | `git diff .gitignore; Get-Content .gitignore -Tail 6; git status --short` |
+| 14.2 | Syntax-check the moved files and render pages from `$env:TEMP` (first run hit a `const` error in `src/db.php`, fixed by switching to `define()`) | `& $php -l <file>`, then `& $php -d error_reporting=-1 -d display_errors=1 <page>` for each page |
+| 14.2 | Confirm the new database path and that `data/Db3.db` is unchanged | `& $php -r 'require "src/db.php"; echo DEFAULT_DB_PATH;'; git status --short data; git diff --stat -- data` |
+| 14.3 | Inspect the new layout and hash the database | `Get-ChildItem public,src,bin,data -Recurse; Select-String -Path src/db.php -Pattern 'DEFAULT_DB_PATH'; Get-FileHash data/Db3.db` |
+| 14.3 | Run the full suite (40 tests passed, database hash unchanged) | `$env:Path = "C:\php\php-8.5.12-1-nts-Win32-vs17-x64;$env:Path"; php vendor/bin/phpunit; Get-FileHash data/Db3.db` |
+| 14.4 | Edit `README.MD` (no shell commands) | none |
+| 14.5 | Start the built-in server in the background, request each URL with GET, then stop the server | `Start-Process $php -ArgumentList '-S','127.0.0.1:8765','-t','public' -PassThru`; `Invoke-WebRequest` for each URL; `Stop-Process -Id <pid>`. Final run used a script at `$env:TEMP\smoke.ps1` run with `powershell -NoProfile -ExecutionPolicy Bypass -File`, after earlier attempts in `pwsh` printed no or garbled output. |
+| 14.5 | Confirm the server stopped and the database is unchanged | `Get-Process php \| Measure-Object; Get-FileHash data/Db3.db` |
+| 15 | Run the suite (40 tests passed) and hash the database | `& $php vendor/bin/phpunit; (Get-FileHash data/Db3.db).Hash` |
+| 15 | Render each page from `%TEMP%` and count warnings | wrote `%TEMP%\r.php`, then `& $php -d error_reporting=-1 -d display_errors=1 %TEMP%\r.php <tmp> <page> [h]` for each page |
+| 15 | Validate Composer and inspect the migration guard | `& $php -d extension=zip C:\php\php-8.5.12-1-nts-Win32-vs17-x64\composer.phar validate; Select-String '"php"' composer.json; Get-Content bin/migrate.php \| Select -First 25` |
+| 15 | Search for leftover old paths and confirm the renames | `Select-String -Path public\*,src\*,bin\*,README.MD,docs\*,.github\workflows\* -Pattern "db\.php\|Db3\.db\|migrate\.php\|..."; git status --short` |
+
+Every server check used GET requests only, and the hash of `data/Db3.db` was the same before and after each check.
+
+### Run by the developer
+
+| Purpose | Command |
+|---|---|
+| Stage the remaining edits, commit and push | `git add -A public src bin data tests README.MD .gitignore .kiro docs; git status --short; git commit -m "..."; git push` |
+
+## 7. Fixing the empty Submitted Date on migrated databases
+
+These commands cover the `submitted-date-empty-fix` bugfix spec. On a database upgraded by `migrateSchema()`, `SUBMITTED_DATE` has `DEFAULT ''`, so new requests were stored with an empty date. The fix sets the date explicitly in `insertRequest()` and shows "Unknown" for older empty rows.
+
+### Run directly by the orchestrator
+
+| # | Purpose | Command |
+|---|---|---|
+| 30 | Append this section | `Add-Content docs/COMMANDS_RUN.md ...` |
+
+The orchestrator ran no other shell commands for this spec. It only read files and updated task status.
+
+### Reported by sub-agents
+
+`$php` stands for `C:\php\php-8.5.12-1-nts-Win32-vs17-x64\php.exe`. This section is built from the sub-agents' summaries, so it may be incomplete and the exact flags may differ.
+
+| Task | Purpose | Command (as reported) |
+|---|---|---|
+| 1 | Find the legacy `EMPDAYOFFREQ` columns in git history (commit `a2780d4`) | `git log` / `git show` against the old `Db3.db` schema |
+| 1 | Read the current schema of `data/Db3.db` without changing it | a read-only `PRAGMA table_info(EMPDAYOFFREQ)` query |
+| 1 | Run the exploration test on the unfixed code (insert and archive tests failed as expected) | `& $php vendor/bin/phpunit tests/Property/SubmittedDateMigratedPropertyTest.php` |
+| 2 | Run the preservation tests on the unfixed code (5 tests passed) | `& $php vendor/bin/phpunit --filter PreservationPropertyTest` |
+| 3.1 | Syntax-check the fix | `& $php -l src/db.php` |
+| 3.2 | Check `formatSubmittedDate()` through the test bootstrap | `& $php -r` calls returning `Unknown` for `''` and `2024-01-01` unchanged |
+| 3.3 | Syntax-check the page | `& $php -l public/manageDays.php` |
+| 3.4 | Run the new display tests (9 tests passed) | `& $php vendor/bin/phpunit --filter <new test class names>` |
+| 3.5 | Re-run the exploration test on the fixed code (3 tests passed) | `& $php vendor/bin/phpunit tests/Property/SubmittedDateMigratedPropertyTest.php` |
+| 3.6 | Re-run the preservation and layout tests (all passed) | `& $php vendor/bin/phpunit` for `FreshSchemaPreservationPropertyTest.php`, `MigratedSchemaPreservationPropertyTest.php`, `DataAccessIsolationTest.php` and `WebRootLayoutTest.php` |
+| 4 | Hash the database before and after (identical) | `Get-FileHash data/Db3.db` |
+| 4 | Run the full suite (57 tests passed) | `& $php vendor/bin/phpunit` |
+| 4 | Render `manageDays.php` with all errors on, from a throwaway copy of `public/` and `src/` with its own temporary database, then delete the copy | `& $php -d error_reporting=-1 -d display_errors=1 <copy>/public/manageDays.php`, for the pending and history views |
+| 4 | Check the file layout and changed files | `Get-ChildItem public, src; git status --short` |
+
+No command wrote to `data/Db3.db`. The tests use in-memory SQLite databases.
