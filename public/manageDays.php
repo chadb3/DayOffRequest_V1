@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/format.php';
 
 // Handle approve/deny/archive POST actions
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['id'], $_POST['action'])) {
@@ -93,7 +94,7 @@ $db->close();
                     <td><?php echo htmlspecialchars($row['SUB']); ?></td>
                     <td><?php echo htmlspecialchars($row['REASON']); ?></td>
                     <td><?php echo htmlspecialchars($row['STATUS']); ?></td>
-                    <td><?php echo htmlspecialchars($row['SUBMITTED_DATE']); ?></td>
+                    <td><?php echo htmlspecialchars(formatSubmittedDate($row['SUBMITTED_DATE'])); ?></td>
                     <td>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="id" value="<?php echo htmlspecialchars($row['NUM']); ?>">
@@ -134,7 +135,7 @@ $db->close();
                     <td><?php echo htmlspecialchars($row['SHIFTS']); ?></td>
                     <td><?php echo htmlspecialchars($row['SUB']); ?></td>
                     <td><?php echo htmlspecialchars($row['REASON']); ?></td>
-                    <td><?php echo htmlspecialchars($row['SUBMITTED_DATE']); ?></td>
+                    <td><?php echo htmlspecialchars(formatSubmittedDate($row['SUBMITTED_DATE'])); ?></td>
                     <td>
                         <form method="POST" style="display:inline;">
                             <input type="hidden" name="id" value="<?php echo htmlspecialchars($row['NUM']); ?>">

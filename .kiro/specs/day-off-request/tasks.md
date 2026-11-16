@@ -161,6 +161,7 @@ This plan implements a complete employee day-off request system with vanilla PHP
   - [x] 9.2 Move engine-specific SQL out of pages and `migrate.php` into `db.php`
     - Move `PRAGMA`, `datetime('now','localtime')`, and `SQLite3` class usage into `db.php` functions (e.g. a schema/migration function called by `migrate.php`)
     - Audit `dayOffRequest.php`, `manageDays.php`, `index.php`, `nav.php`, and `migrate.php` so each obtains its connection and runs all queries only through `db.php` functions (`insertRequest`, `getRequestById`, `countRequests`, `getPendingRequests`, `getHistoryRequests`, `updateRequestStatus`, `archiveRequest`, `getArchivedRequestById`)
+    - Known issue: this change replaced the page's INSERT (which set `SUBMITTED_DATE` with `datetime('now','localtime')`) with `insertRequest()`, which relies on the column default. On databases upgraded by `migrateSchema()` that default is `''`, so new requests get an empty submitted date. Tracked and fixed in the separate `submitted-date-empty-fix` bugfix spec.
     - _Requirements: 12.1, 12.2, 8.4_
 
   - [x] 9.3 Wire `dayOffRequest.php` to `validateRequest()` from `validation.php`

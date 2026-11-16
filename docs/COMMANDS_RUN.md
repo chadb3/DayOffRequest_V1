@@ -167,3 +167,38 @@ Every server check used GET requests only, and the hash of `data/Db3.db` was the
 | Purpose | Command |
 |---|---|
 | Stage the remaining edits, commit and push | `git add -A public src bin data tests README.MD .gitignore .kiro docs; git status --short; git commit -m "..."; git push` |
+
+## 7. Fixing the empty Submitted Date on migrated databases
+
+These commands cover the `submitted-date-empty-fix` bugfix spec. On a database upgraded by `migrateSchema()`, `SUBMITTED_DATE` has `DEFAULT ''`, so new requests were stored with an empty date. The fix sets the date explicitly in `insertRequest()` and shows "Unknown" for older empty rows.
+
+### Run directly by the orchestrator
+
+| # | Purpose | Command |
+|---|---|---|
+| 30 | Append this section | `Add-Content docs/COMMANDS_RUN.md ...` |
+
+The orchestrator ran no other shell commands for this spec. It only read files and updated task status.
+
+### Reported by sub-agents
+
+`$php` stands for `C:\php\php-8.5.12-1-nts-Win32-vs17-x64\php.exe`. This section is built from the sub-agents' summaries, so it may be incomplete and the exact flags may differ.
+
+| Task | Purpose | Command (as reported) |
+|---|---|---|
+| 1 | Find the legacy `EMPDAYOFFREQ` columns in git history (commit `a2780d4`) | `git log` / `git show` against the old `Db3.db` schema |
+| 1 | Read the current schema of `data/Db3.db` without changing it | a read-only `PRAGMA table_info(EMPDAYOFFREQ)` query |
+| 1 | Run the exploration test on the unfixed code (insert and archive tests failed as expected) | `& $php vendor/bin/phpunit tests/Property/SubmittedDateMigratedPropertyTest.php` |
+| 2 | Run the preservation tests on the unfixed code (5 tests passed) | `& $php vendor/bin/phpunit --filter PreservationPropertyTest` |
+| 3.1 | Syntax-check the fix | `& $php -l src/db.php` |
+| 3.2 | Check `formatSubmittedDate()` through the test bootstrap | `& $php -r` calls returning `Unknown` for `''` and `2024-01-01` unchanged |
+| 3.3 | Syntax-check the page | `& $php -l public/manageDays.php` |
+| 3.4 | Run the new display tests (9 tests passed) | `& $php vendor/bin/phpunit --filter <new test class names>` |
+| 3.5 | Re-run the exploration test on the fixed code (3 tests passed) | `& $php vendor/bin/phpunit tests/Property/SubmittedDateMigratedPropertyTest.php` |
+| 3.6 | Re-run the preservation and layout tests (all passed) | `& $php vendor/bin/phpunit` for `FreshSchemaPreservationPropertyTest.php`, `MigratedSchemaPreservationPropertyTest.php`, `DataAccessIsolationTest.php` and `WebRootLayoutTest.php` |
+| 4 | Hash the database before and after (identical) | `Get-FileHash data/Db3.db` |
+| 4 | Run the full suite (57 tests passed) | `& $php vendor/bin/phpunit` |
+| 4 | Render `manageDays.php` with all errors on, from a throwaway copy of `public/` and `src/` with its own temporary database, then delete the copy | `& $php -d error_reporting=-1 -d display_errors=1 <copy>/public/manageDays.php`, for the pending and history views |
+| 4 | Check the file layout and changed files | `Get-ChildItem public, src; git status --short` |
+
+No command wrote to `data/Db3.db`. The tests use in-memory SQLite databases.

@@ -40,11 +40,15 @@ function createSchema(SQLite3 $db): void {
     )");
 }
 
-/** Insert a request; STATUS and SUBMITTED_DATE come from column defaults. Returns the new NUM. */
+/**
+ * Insert a request. STATUS comes from the column default. SUBMITTED_DATE is set
+ * explicitly because migrated tables have DEFAULT '' for that column.
+ * Returns the new NUM.
+ */
 function insertRequest(SQLite3 $db, array $data): int {
     $stmt = $db->prepare(
-        'INSERT INTO EMPDAYOFFREQ (NAME, PHONE, SHIFTS, SUB, REASON)
-         VALUES (:name, :phone, :shifts, :sub, :reason)'
+        "INSERT INTO EMPDAYOFFREQ (NAME, PHONE, SHIFTS, SUB, REASON, SUBMITTED_DATE)
+         VALUES (:name, :phone, :shifts, :sub, :reason, datetime('now','localtime'))"
     );
     if ($stmt === false) {
         throw new RuntimeException('Failed to prepare insert: ' . $db->lastErrorMsg());
